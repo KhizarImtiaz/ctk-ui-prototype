@@ -272,21 +272,22 @@ function PartiesTable({
     background: "#d8d8d0", color: "#222", borderRight: "1px solid #bbb",
     borderBottom: "2px solid #aaa", whiteSpace: "nowrap" as const,
   };
-  const tdStyle = (alt: boolean): React.CSSProperties => ({
-    padding: "8px 10px", fontSize: 13, verticalAlign: "top",
+  const tdStyle = (alt: boolean, noWrap = false): React.CSSProperties => ({
+    padding: "8px 10px", fontSize: 13, verticalAlign: "middle",
     borderRight: "1px solid #ccc", borderBottom: "1px solid #ccc",
     background: alt ? "#e8e8e0" : "#f8f8f4",
+    whiteSpace: noWrap ? "nowrap" as const : "normal" as const,
   });
 
   return (
     <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #bbb" }}>
       <thead>
         <tr>
-          <th style={{ ...thStyle, width: 160 }}>Name (Insured *)</th>
-          <th style={{ ...thStyle, width: 220 }}>Party Type</th>
+          <th style={{ ...thStyle, width: 150 }}>Party Name</th>
+          <th style={{ ...thStyle, width: 240 }}>Party Type</th>
           <th style={thStyle}>Summary</th>
-          <th style={{ ...thStyle, width: 220 }}>Documents</th>
-          <th style={{ ...thStyle, width: 180, borderRight: "none" }}>Action</th>
+          <th style={{ ...thStyle, width: 200 }}>Documents</th>
+          <th style={{ ...thStyle, width: 160, borderRight: "none" }}>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -307,7 +308,7 @@ function PartiesTable({
               </td>
 
               {/* Party type */}
-              <td style={tdStyle(alt)}>
+              <td style={tdStyle(alt, true)}>
                 <span style={{ fontSize: 13, color: "#222" }}>{party.partyType}</span>
               </td>
 
@@ -333,7 +334,7 @@ function PartiesTable({
               </td>
 
               {/* Action — Agree / Disagree */}
-              <td style={{ ...tdStyle(alt), borderRight: "none" }}>
+              <td style={{ ...tdStyle(alt, true), borderRight: "none" }}>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
                     onClick={() => onPartyAgree(party.partyKey, isAgree ? "" : "agree")}
@@ -395,22 +396,9 @@ function DutySectionPanel({
         />
       </div>
 
-      {/* Location field (Speed = Location of Impact / Lookout = Point of Impact) */}
-      {locationLabel && (
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>{locationLabel}</div>
-          <input
-            style={inputStyle}
-            value={data.locationNote}
-            onChange={e => onLocationChange(e.target.value)}
-            placeholder={`Enter ${locationLabel}…`}
-          />
-        </div>
-      )}
-
       {/* Overall notes for this duty */}
       <div>
-        <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>Notes for {title}</div>
+        <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>Notes for {locationLabel ?? title}</div>
         <textarea
           rows={3} value={data.note}
           onChange={e => onNoteChange(e.target.value)}
