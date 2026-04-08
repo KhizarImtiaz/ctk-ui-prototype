@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -l \"Checklist\\\\|Legal\\\\|Liability\" /d/vaival/ctk/revamp-autoliability/ctk-autoliability-frontend/src/app/autolia/*/*.tsx)",
-      "mcp__Claude_Preview__preview_start",
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)"
-    ]
-  }
-}
