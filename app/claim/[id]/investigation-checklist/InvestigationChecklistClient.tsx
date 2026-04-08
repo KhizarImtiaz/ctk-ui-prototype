@@ -4,19 +4,24 @@ import { useState } from "react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Status = "unaddressed" | "confirmed" | "disputed";
 
+interface ResolutionEntry {
+  entryId: string;
+  note: string;
+  date: string;
+  type: string;
+}
+
 interface CheckItem {
   id: string;
   group: string;
   label: string;
   status: Status;
   disputeNote: string;
-  resolutionNote: string;
-  resolutionDate: string;
-  resolutionType: string;
+  resolutionNotes: ResolutionEntry[];
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
-const SEED: Omit<CheckItem, "status" | "disputeNote" | "resolutionNote" | "resolutionDate" | "resolutionType">[] = [
+const SEED: Omit<CheckItem, "status" | "disputeNote" | "resolutionNotes">[] = [
   { id: "date_loss",       group: "Incident Details",               label: "Confirm Date of Loss" },
   { id: "time_loss",       group: "Incident Details",               label: "Confirm Time of Loss" },
   { id: "loss_location",   group: "Incident Details",               label: "Confirm Loss Location" },
@@ -51,8 +56,13 @@ const SEED: Omit<CheckItem, "status" | "disputeNote" | "resolutionNote" | "resol
   { id: "close_actions",   group: "Settlement & Closure",           label: "Complete Closing Actions" },
 ];
 
+const newResolutionEntry = (): ResolutionEntry => ({
+  entryId: `re-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+  note: "", date: "", type: "",
+});
+
 const INITIAL: CheckItem[] = SEED.map(s => ({
-  ...s, status: "unaddressed", disputeNote: "", resolutionNote: "", resolutionDate: "", resolutionType: "",
+  ...s, status: "unaddressed", disputeNote: "", resolutionNotes: [],
 }));
 
 const LEGAL = {
@@ -165,7 +175,15 @@ const S = {
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function DisputeRow({ item, onChange }: { item: CheckItem; onChange: (id: string, field: string, val: string) => void }) {
+function DisputeRow({
+  item, onChange, onResolutionAdd, onResolutionChange, onResolutionRemove,
+}: {
+  item: CheckItem;
+  onChange: (id: string, field: string, val: string) => void;
+  onResolutionAdd: (id: string) => void;
+  onResolutionChange: (id: string, entryId: string, field: string, val: string) => void;
+  onResolutionRemove: (id: string, entryId: string) => void;
+}) {
   const set = (field: string, val: string) => onChange(item.id, field, val);
   return (
     <div style={S.dRow(item.status)}>
@@ -179,26 +197,80 @@ function DisputeRow({ item, onChange }: { item: CheckItem; onChange: (id: string
       </div>
       {item.status === "disputed" && (
         <div style={S.disputeFields}>
+          {/* Dispute Notes */}
           <div style={S.fieldRow}>
             <div style={S.field}>
               <label style={S.fLabel}>Dispute Notes</label>
               <textarea style={S.textarea} rows={2} value={item.disputeNote} placeholder="Describe the dispute…" onChange={e => set("disputeNote", e.target.value)} />
             </div>
           </div>
-          <div style={S.fieldRow}>
-            <div style={S.field}>
-              <label style={S.fLabel}>Resolution Notes</label>
-              <textarea style={S.textarea} rows={2} value={item.resolutionNote} placeholder="How was this resolved…" onChange={e => set("resolutionNote", e.target.value)} />
+
+          {/* Resolution Notes — multiple entries */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <label style={S.fLabel}>
+                Resolution Notes
+                {item.resolutionNotes.length > 0 && (
+                  <span style={{ fontWeight: "normal", color: "#888", marginLeft: 4 }}>({item.resolutionNotes.length})</span>
+                )}
+              </label>
+              <button
+                onClick={() => onResolutionAdd(item.id)}
+                style={{ fontSize: 10, padding: "2px 8px", background: "var(--ctk-navy)", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+              >+ Add Resolution Note</button>
             </div>
-            <div style={S.fieldSm}>
-              <label style={S.fLabel}>Resolution Date</label>
-              <input type="date" style={S.input} value={item.resolutionDate} onChange={e => set("resolutionDate", e.target.value)} />
-              <label style={{ ...S.fLabel, marginTop: 6 }}>Resolution Type</label>
-              <select style={S.select} value={item.resolutionType} onChange={e => set("resolutionType", e.target.value)}>
-                <option value="">-- Select --</option>
-                {["Statement", "Police Report", "Physical Evidence", "Photos", "Witness", "Other"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
+
+            {item.resolutionNotes.length === 0 && (
+              <div style={{ fontSize: 10, color: "#999", fontStyle: "italic", padding: "4px 0" }}>No resolution notes yet. Click "+ Add Resolution Note" to add one.</div>
+            )}
+
+            {item.resolutionNotes.map((entry, idx) => (
+              <div key={entry.entryId} style={{ border: "1px solid #d8d0d0", borderRadius: 2, marginBottom: 6, background: "#fffdf8" }}>
+                {/* Entry header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 8px", background: "#f0ede8", borderBottom: "1px solid #e0d8d0" }}>
+                  <span style={{ fontSize: 10, fontWeight: "bold", color: "#664", }}>Resolution Note #{idx + 1}</span>
+                  <button
+                    onClick={() => onResolutionRemove(item.id, entry.entryId)}
+                    style={{ fontSize: 9, padding: "1px 6px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}
+                  >Remove</button>
+                </div>
+                {/* Entry fields */}
+                <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column" as const, gap: 5 }}>
+                  <div style={S.fieldRow}>
+                    <div style={S.field}>
+                      <label style={S.fLabel}>Resolution Note</label>
+                      <textarea
+                        style={S.textarea} rows={2}
+                        value={entry.note}
+                        placeholder="How was this resolved…"
+                        onChange={e => onResolutionChange(item.id, entry.entryId, "note", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div style={S.fieldRow}>
+                    <div style={S.fieldSm}>
+                      <label style={S.fLabel}>Resolution Date</label>
+                      <input
+                        type="date" style={S.input}
+                        value={entry.date}
+                        onChange={e => onResolutionChange(item.id, entry.entryId, "date", e.target.value)}
+                      />
+                    </div>
+                    <div style={S.field}>
+                      <label style={S.fLabel}>Resolution Type</label>
+                      <select
+                        style={S.select}
+                        value={entry.type}
+                        onChange={e => onResolutionChange(item.id, entry.entryId, "type", e.target.value)}
+                      >
+                        <option value="">-- Select --</option>
+                        {["Statement", "Police Report", "Physical Evidence", "Photos", "Witness", "Other"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -207,10 +279,14 @@ function DisputeRow({ item, onChange }: { item: CheckItem; onChange: (id: string
 }
 
 function ChecklistPanel({
-  items, onItemChange, groupEnabled, onGroupToggle,
+  items, onItemChange, onResolutionAdd, onResolutionChange, onResolutionRemove,
+  groupEnabled, onGroupToggle,
 }: {
   items: CheckItem[];
   onItemChange: (id: string, field: string, val: string) => void;
+  onResolutionAdd: (id: string) => void;
+  onResolutionChange: (id: string, entryId: string, field: string, val: string) => void;
+  onResolutionRemove: (id: string, entryId: string) => void;
   groupEnabled: Record<string, boolean>;
   onGroupToggle: (group: string) => void;
 }) {
@@ -269,7 +345,15 @@ function ChecklistPanel({
         <div style={S.disputeList}>
           {filtered.length === 0
             ? <div style={{ padding: 16, color: "var(--ctk-green)", fontStyle: "italic", textAlign: "center" }}>All items confirmed ✓</div>
-            : filtered.map(item => <DisputeRow key={item.id} item={item} onChange={onItemChange} />)
+            : filtered.map(item => (
+                <DisputeRow
+                  key={item.id} item={item}
+                  onChange={onItemChange}
+                  onResolutionAdd={onResolutionAdd}
+                  onResolutionChange={onResolutionChange}
+                  onResolutionRemove={onResolutionRemove}
+                />
+              ))
           }
         </div>
 
@@ -335,6 +419,26 @@ export default function InvestigationChecklistPage() {
   const handleChange = (id: string, field: string, val: string) =>
     setItems(prev => prev.map(it => it.id === id ? { ...it, [field]: val } : it));
 
+  const handleResolutionAdd = (id: string) =>
+    setItems(prev => prev.map(it =>
+      it.id === id ? { ...it, resolutionNotes: [...it.resolutionNotes, newResolutionEntry()] } : it
+    ));
+
+  const handleResolutionChange = (id: string, entryId: string, field: string, val: string) =>
+    setItems(prev => prev.map(it =>
+      it.id === id ? {
+        ...it,
+        resolutionNotes: it.resolutionNotes.map(e =>
+          e.entryId === entryId ? { ...e, [field]: val } : e
+        ),
+      } : it
+    ));
+
+  const handleResolutionRemove = (id: string, entryId: string) =>
+    setItems(prev => prev.map(it =>
+      it.id === id ? { ...it, resolutionNotes: it.resolutionNotes.filter(e => e.entryId !== entryId) } : it
+    ));
+
   const handleGroupToggle = (group: string) => {
     const turningOff = groupEnabled[group] !== false;
     setGroupEnabled(prev => ({ ...prev, [group]: !turningOff }));
@@ -365,6 +469,9 @@ export default function InvestigationChecklistPage() {
         <ChecklistPanel
           items={items}
           onItemChange={handleChange}
+          onResolutionAdd={handleResolutionAdd}
+          onResolutionChange={handleResolutionChange}
+          onResolutionRemove={handleResolutionRemove}
           groupEnabled={groupEnabled}
           onGroupToggle={handleGroupToggle}
         />
