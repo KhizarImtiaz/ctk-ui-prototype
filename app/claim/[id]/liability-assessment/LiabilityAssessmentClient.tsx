@@ -16,7 +16,11 @@ const AVOIDANCE_DUTIES = [
   { title: "SPEED REGULATIONS", duty: "Speed may not always, in itself, be the primary factor that turns a minor mishap..." },
 ];
 
-const CLAIM_PARTIES = ["Insured", "Claimant", "Witness"];
+const CLAIM_PARTIES: { name: string; type: string; isInsured?: boolean }[] = [
+  { name: "Khizar Imtiaz",  type: "Driver With the Right of Way (ROW)*", isInsured: true },
+  { name: "Khizar Imtiaz",  type: "Driver With the Right of Way (ROW)*", isInsured: true },
+  { name: "Farhan Nazarat", type: "Driver Who Failed To Yield (FTY)" },
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UploadedDoc {
@@ -27,7 +31,10 @@ interface UploadedDoc {
 }
 
 interface PartyEvidence {
+  partyKey: string;   // unique key (name + index)
   partyName: string;
+  partyType: string;
+  isInsured: boolean;
   agree: "agree" | "disagree" | "";
   summary: string;
   attachedDocIds: string[];
@@ -42,7 +49,15 @@ interface DutyData {
 const makeDutyData = (): DutyData => ({
   note: "",
   locationNote: "",
-  parties: CLAIM_PARTIES.map(p => ({ partyName: p, agree: "", summary: "", attachedDocIds: [] })),
+  parties: CLAIM_PARTIES.map((p, i) => ({
+    partyKey: `${p.name}-${i}`,
+    partyName: p.name,
+    partyType: p.type,
+    isInsured: !!p.isInsured,
+    agree: "",
+    summary: "",
+    attachedDocIds: [],
+  })),
 });
 
 // ─── Shared style constants ───────────────────────────────────────────────────
@@ -155,16 +170,13 @@ function ImpactGrid({ label }: { label: string }) {
   );
 }
 
-// ─── Party Evidence Row ───────────────────────────────────────────────────────
-function PartyRow({
-  party, uploadedDocs, onUpload,
-  onAgreeChange, onSummaryChange, onAttach, onDetach,
+// ─── Document cell (used inside the table) ───────────────────────────────────
+function DocCell({
+  party, uploadedDocs, onUpload, onAttach, onDetach,
 }: {
   party: PartyEvidence;
   uploadedDocs: UploadedDoc[];
   onUpload: (doc: UploadedDoc) => void;
-  onAgreeChange: (val: "agree" | "disagree" | "") => void;
-  onSummaryChange: (val: string) => void;
   onAttach: (id: string) => void;
   onDetach: (id: string) => void;
 }) {
@@ -187,96 +199,165 @@ function PartyRow({
     e.target.value = "";
   };
 
-  const attached = uploadedDocs.filter(d => party.attachedDocIds.includes(d.id));
+  const attached   = uploadedDocs.filter(d => party.attachedDocIds.includes(d.id));
   const unattached = uploadedDocs.filter(d => !party.attachedDocIds.includes(d.id));
 
-  const agreeBtn = (val: "agree" | "disagree", label: string, activeColor: string) => ({
-    padding: "3px 14px", fontSize: 12, border: "1px solid #bbb", cursor: "pointer", borderRadius: 2,
-    fontWeight: "bold" as const,
-    background: party.agree === val ? activeColor : "#f0f0f0",
-    color: party.agree === val ? "#fff" : "#555",
-    borderColor: party.agree === val ? activeColor : "#bbb",
-  });
-
   return (
-    <div style={{ border: C.borderLight, borderRadius: 3, marginBottom: 8, background: "#fff" }}>
-      {/* Party header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", background: "#eef2f8", borderBottom: C.borderLight }}>
-        <span style={{ fontWeight: "bold", fontSize: 13, color: C.navy }}>{party.partyName}</span>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button style={agreeBtn("agree", "Agree", C.green)} onClick={() => onAgreeChange(party.agree === "agree" ? "" : "agree")}>✓ Agree</button>
-          <button style={agreeBtn("disagree", "Disagree", "#c00")} onClick={() => onAgreeChange(party.agree === "disagree" ? "" : "disagree")}>✗ Disagree</button>
+    <div style={{ display: "flex", flexDirection: "column" as const, gap: 4 }}>
+      {/* Attached doc list */}
+      {attached.map(doc => (
+        <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 4, background: "#f0f4f0", border: "1px solid #b8d8b8", borderRadius: 2, padding: "2px 6px" }}>
+          <span style={{ fontSize: 13 }}>📄</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+          </div>
+          <button onClick={() => onDetach(doc.id)} style={{ fontSize: 10, padding: "0px 5px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00" }}>✕</button>
         </div>
-      </div>
+      ))}
 
-      <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
-        {/* Summary */}
-        <div>
-          <div style={{ fontSize: 12, color: "#555", fontWeight: "bold", marginBottom: 3 }}>Summary</div>
-          <textarea
-            rows={2} value={party.summary}
-            onChange={e => onSummaryChange(e.target.value)}
-            placeholder={`${party.partyName}'s account / position…`}
-            style={textareaStyle}
-          />
-        </div>
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as const }}>
+        <button onClick={() => fileRef.current?.click()}
+          style={{ fontSize: 11, padding: "2px 8px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
+          ⬆ Upload
+        </button>
+        <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} />
 
-        {/* Attached docs */}
-        {attached.length > 0 && (
-          <div>
-            <div style={{ fontSize: 12, color: "#555", fontWeight: "bold", marginBottom: 3 }}>Evidence Documents</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {attached.map(doc => (
-                <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0f4f0", border: "1px solid #b8d8b8", borderRadius: 2, padding: "3px 8px" }}>
-                  <span style={{ fontSize: 15 }}>📄</span>
+        <div style={{ position: "relative" as const }}>
+          <button onClick={() => setShowPicker(v => !v)}
+            style={{ fontSize: 11, padding: "2px 8px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
+            📎 Claim Docs{unattached.length > 0 ? ` (${unattached.length})` : ""}
+          </button>
+          {showPicker && (
+            <div style={{ position: "absolute" as const, top: "110%", left: 0, zIndex: 300, background: "#fff", border: "1px solid #aaa", borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.18)", minWidth: 260, padding: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>
+                {unattached.length === 0 ? "No more claim documents available." : "Select a claim document:"}
+              </div>
+              {unattached.map(doc => (
+                <div key={doc.id} onClick={() => { onAttach(doc.id); setShowPicker(false); }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", cursor: "pointer", borderRadius: 2, marginBottom: 2 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#e8f0e8")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <span style={{ fontSize: 14 }}>📄</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: "#333", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+                    <div style={{ fontSize: 12, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
                     <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
                   </div>
-                  <button onClick={() => onDetach(doc.id)} style={{ fontSize: 11, padding: "1px 7px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}>Remove</button>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Doc actions */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
-          <button onClick={() => fileRef.current?.click()}
-            style={{ fontSize: 12, padding: "3px 10px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
-            ⬆ Upload Document
-          </button>
-          <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} />
-
-          {unattached.length > 0 && (
-            <div style={{ position: "relative" as const }}>
-              <button onClick={() => setShowPicker(v => !v)}
-                style={{ fontSize: 12, padding: "3px 10px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
-                📎 Choose from Claim Docs ({unattached.length})
-              </button>
-              {showPicker && (
-                <div style={{ position: "absolute" as const, top: "110%", left: 0, zIndex: 200, background: "#fff", border: "1px solid #aaa", borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.15)", minWidth: 260, padding: 6 }}>
-                  <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>Select from claim documents:</div>
-                  {unattached.map(doc => (
-                    <div key={doc.id} onClick={() => { onAttach(doc.id); setShowPicker(false); }}
-                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", cursor: "pointer", borderRadius: 2, marginBottom: 2 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "#e8f0e8")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                      <span style={{ fontSize: 15 }}>📄</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                        <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
-                      </div>
-                    </div>
-                  ))}
-                  <button onClick={() => setShowPicker(false)} style={{ fontSize: 12, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}>Close</button>
-                </div>
-              )}
+              <button onClick={() => setShowPicker(false)} style={{ fontSize: 11, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}>Close</button>
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Parties Table ────────────────────────────────────────────────────────────
+function PartiesTable({
+  parties, uploadedDocs, onUpload,
+  onPartyAgree, onPartySummary, onPartyAttach, onPartyDetach,
+}: {
+  parties: PartyEvidence[];
+  uploadedDocs: UploadedDoc[];
+  onUpload: (doc: UploadedDoc) => void;
+  onPartyAgree:   (key: string, val: "agree" | "disagree" | "") => void;
+  onPartySummary: (key: string, val: string) => void;
+  onPartyAttach:  (key: string, docId: string) => void;
+  onPartyDetach:  (key: string, docId: string) => void;
+}) {
+  const thStyle: React.CSSProperties = {
+    padding: "6px 10px", fontSize: 13, fontWeight: "bold", textAlign: "left",
+    background: "#d8d8d0", color: "#222", borderRight: "1px solid #bbb",
+    borderBottom: "2px solid #aaa", whiteSpace: "nowrap" as const,
+  };
+  const tdStyle = (alt: boolean): React.CSSProperties => ({
+    padding: "8px 10px", fontSize: 13, verticalAlign: "top",
+    borderRight: "1px solid #ccc", borderBottom: "1px solid #ccc",
+    background: alt ? "#e8e8e0" : "#f8f8f4",
+  });
+
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #bbb" }}>
+      <thead>
+        <tr>
+          <th style={{ ...thStyle, width: 160 }}>Name (Insured *)</th>
+          <th style={{ ...thStyle, width: 220 }}>Party Type</th>
+          <th style={thStyle}>Summary</th>
+          <th style={{ ...thStyle, width: 220 }}>Documents</th>
+          <th style={{ ...thStyle, width: 180, borderRight: "none" }}>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {parties.map((party, idx) => {
+          const alt = idx % 2 === 1;
+          const isAgree    = party.agree === "agree";
+          const isDisagree = party.agree === "disagree";
+          return (
+            <tr key={party.partyKey}>
+              {/* Name */}
+              <td style={tdStyle(alt)}>
+                <a href="#" onClick={e => e.preventDefault()}
+                  style={{ color: C.blue, fontWeight: "bold", fontSize: 13, textDecoration: "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
+                  {party.partyName}{party.isInsured ? "*" : ""}
+                </a>
+              </td>
+
+              {/* Party type */}
+              <td style={tdStyle(alt)}>
+                <span style={{ fontSize: 13, color: "#222" }}>{party.partyType}</span>
+              </td>
+
+              {/* Summary */}
+              <td style={tdStyle(alt)}>
+                <textarea
+                  rows={2} value={party.summary}
+                  onChange={e => onPartySummary(party.partyKey, e.target.value)}
+                  placeholder="Enter summary…"
+                  style={{ ...textareaStyle, minWidth: 140 }}
+                />
+              </td>
+
+              {/* Documents */}
+              <td style={tdStyle(alt)}>
+                <DocCell
+                  party={party}
+                  uploadedDocs={uploadedDocs}
+                  onUpload={onUpload}
+                  onAttach={id => onPartyAttach(party.partyKey, id)}
+                  onDetach={id => onPartyDetach(party.partyKey, id)}
+                />
+              </td>
+
+              {/* Action — Agree / Disagree */}
+              <td style={{ ...tdStyle(alt), borderRight: "none" }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => onPartyAgree(party.partyKey, isAgree ? "" : "agree")}
+                    style={{
+                      padding: "4px 12px", fontSize: 12, fontWeight: "bold", cursor: "pointer", borderRadius: 2,
+                      border: `1px solid ${isAgree ? C.green : "#bbb"}`,
+                      background: isAgree ? C.green : "#f0f0f0",
+                      color: isAgree ? "#fff" : "#444",
+                    }}>✓ Agree</button>
+                  <button
+                    onClick={() => onPartyAgree(party.partyKey, isDisagree ? "" : "disagree")}
+                    style={{
+                      padding: "4px 12px", fontSize: 12, fontWeight: "bold", cursor: "pointer", borderRadius: 2,
+                      border: `1px solid ${isDisagree ? "#c00" : "#bbb"}`,
+                      background: isDisagree ? "#c00" : "#f0f0f0",
+                      color: isDisagree ? "#fff" : "#444",
+                    }}>✗ Disagree</button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -292,39 +373,29 @@ function DutySectionPanel({
   data: DutyData;
   onNoteChange: (v: string) => void;
   onLocationChange: (v: string) => void;
-  onPartyAgree: (partyName: string, val: "agree" | "disagree" | "") => void;
-  onPartySummary: (partyName: string, val: string) => void;
-  onPartyAttach: (partyName: string, docId: string) => void;
-  onPartyDetach: (partyName: string, docId: string) => void;
+  onPartyAgree:   (key: string, val: "agree" | "disagree" | "") => void;
+  onPartySummary: (key: string, val: string) => void;
+  onPartyAttach:  (key: string, docId: string) => void;
+  onPartyDetach:  (key: string, docId: string) => void;
   uploadedDocs: UploadedDoc[];
   onUpload: (doc: UploadedDoc) => void;
 }) {
   return (
     <div style={{ padding: "12px 14px", background: "#fff" }}>
-      {/* Duty title row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 14, fontWeight: "bold", color: C.blue }}>{title}</span>
-        <span style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>{subtitle}</span>
+      {/* Parties table */}
+      <div style={{ marginBottom: 12 }}>
+        <PartiesTable
+          parties={data.parties}
+          uploadedDocs={uploadedDocs}
+          onUpload={onUpload}
+          onPartyAgree={onPartyAgree}
+          onPartySummary={onPartySummary}
+          onPartyAttach={onPartyAttach}
+          onPartyDetach={onPartyDetach}
+        />
       </div>
 
-      {/* Party rows */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: "bold", color: C.navy, marginBottom: 6 }}>Parties in Claim</div>
-        {data.parties.map(party => (
-          <PartyRow
-            key={party.partyName}
-            party={party}
-            uploadedDocs={uploadedDocs}
-            onUpload={onUpload}
-            onAgreeChange={val => onPartyAgree(party.partyName, val)}
-            onSummaryChange={val => onPartySummary(party.partyName, val)}
-            onAttach={id => onPartyAttach(party.partyName, id)}
-            onDetach={id => onPartyDetach(party.partyName, id)}
-          />
-        ))}
-      </div>
-
-      {/* Location field (Speed / Lookout) */}
+      {/* Location field (Speed = Location of Impact / Lookout = Point of Impact) */}
       {locationLabel && (
         <div style={{ marginBottom: 10 }}>
           <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>{locationLabel}</div>
@@ -337,7 +408,7 @@ function DutySectionPanel({
         </div>
       )}
 
-      {/* Overall note for this duty */}
+      {/* Overall notes for this duty */}
       <div>
         <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>Notes for {title}</div>
         <textarea
@@ -404,18 +475,18 @@ export default function LiabilityAssessmentPage() {
   const makeHandlers = (setter: React.Dispatch<React.SetStateAction<DutyData>>) => ({
     onNoteChange:     (v: string) => updateDuty(setter, d => ({ ...d, note: v })),
     onLocationChange: (v: string) => updateDuty(setter, d => ({ ...d, locationNote: v })),
-    onPartyAgree:     (name: string, val: "agree" | "disagree" | "") => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyName === name ? { ...p, agree: val } : p),
+    onPartyAgree:     (key: string, val: "agree" | "disagree" | "") => updateDuty(setter, d => ({
+      ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, agree: val } : p),
     })),
-    onPartySummary:   (name: string, val: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyName === name ? { ...p, summary: val } : p),
+    onPartySummary:   (key: string, val: string) => updateDuty(setter, d => ({
+      ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, summary: val } : p),
     })),
-    onPartyAttach:    (name: string, id: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyName === name && !p.attachedDocIds.includes(id)
+    onPartyAttach:    (key: string, id: string) => updateDuty(setter, d => ({
+      ...d, parties: d.parties.map(p => p.partyKey === key && !p.attachedDocIds.includes(id)
         ? { ...p, attachedDocIds: [...p.attachedDocIds, id] } : p),
     })),
-    onPartyDetach:    (name: string, id: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyName === name
+    onPartyDetach:    (key: string, id: string) => updateDuty(setter, d => ({
+      ...d, parties: d.parties.map(p => p.partyKey === key
         ? { ...p, attachedDocIds: p.attachedDocIds.filter(x => x !== id) } : p),
     })),
   });
