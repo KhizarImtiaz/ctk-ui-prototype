@@ -99,7 +99,7 @@ const S = {
   }),
   // Checklist
   checkWrap: { display: "flex", border: "1px solid var(--ctk-border)", minHeight: 480 },
-  sidebarWrap: { width: 200, borderRight: "1px solid var(--ctk-border)", background: "#f8f8f8", overflowY: "auto" as const, flexShrink: 0 },
+  sidebarWrap: { width: 300, borderRight: "1px solid var(--ctk-border)", background: "#f8f8f8", overflowY: "auto" as const, flexShrink: 0 },
   sidebarHead: { background: "var(--ctk-navy)", color: "#fff", fontWeight: "bold", fontSize: 14, padding: "6px 8px" },
   groupWrap: (active: boolean, enabled: boolean): React.CSSProperties => ({
     borderBottom: "1px solid #ddd",
@@ -168,7 +168,7 @@ const S = {
   summaryBar: { display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: "#e8e8e8", borderTop: "1px solid #bbb", flexShrink: 0 },
   summaryCell: { display: "flex", flexDirection: "column" as const, alignItems: "center", minWidth: 52 },
   summaryNum: (color?: string): React.CSSProperties => ({ fontSize: 19, fontWeight: "bold", color: color ?? "#333", lineHeight: 1 }),
-  summaryLbl: { fontSize: 11, color: "#666", textTransform: "uppercase" as const, letterSpacing: "0.03em" },
+  summaryLbl: { fontSize: 13, color: "#666", textTransform: "uppercase" as const, letterSpacing: "0.03em" },
   saveBtn: { marginLeft: "auto", padding: "4px 20px", background: "var(--ctk-green)", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer", fontSize: 14 },
   // Legal
   legalPanel: { border: "1px solid var(--ctk-border)", background: "#fff", padding: "16px 18px" },
@@ -253,7 +253,7 @@ function DisputeRow({
                   <span style={{ fontSize: 12, fontWeight: "bold", color: "#664", }}>Resolution Note #{idx + 1}</span>
                   <button
                     onClick={() => onResolutionRemove(item.id, entry.entryId)}
-                    style={{ fontSize: 11, padding: "1px 6px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}
+                    style={{ fontSize: 13, padding: "1px 6px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}
                   >Remove</button>
                 </div>
                 {/* Entry fields */}

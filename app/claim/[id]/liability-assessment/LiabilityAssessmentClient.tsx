@@ -145,7 +145,7 @@ function EvidenceSection({
                 <span style={{ fontSize: 16, lineHeight: 1 }}>📄</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, color: "#333", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                  <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · Uploaded {doc.uploadedAt}</div>
+                  <div style={{ fontSize: 13, color: "#888" }}>{doc.size} · Uploaded {doc.uploadedAt}</div>
                 </div>
                 <button
                   onClick={() => onDetach(doc.id)}
@@ -198,13 +198,13 @@ function EvidenceSection({
                     <span style={{ fontSize: 15 }}>📄</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                      <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
+                      <div style={{ fontSize: 13, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
                     </div>
                   </div>
                 ))}
                 <button
                   onClick={() => setShowAttachPicker(false)}
-                  style={{ fontSize: 11, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}
+                  style={{ fontSize: 13, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}
                 >Close</button>
               </div>
             )}
@@ -255,7 +255,7 @@ function DutiesTable({ title, rows }: { title: string; rows: { title: string; du
                   {r.duty.length > 60 ? r.duty.slice(0, 60) + "..." : r.duty}
                 </td>
                 <td style={{ padding: "2px 4px", borderBottom: C.borderLight }}>
-                  <button style={{ fontSize: 11, padding: "1px 6px", background: "#e8e8e8", border: "1px solid #bbb", cursor: "pointer", color: "#c00" }}>Delete</button>
+                  <button style={{ fontSize: 13, padding: "1px 6px", background: "#e8e8e8", border: "1px solid #bbb", cursor: "pointer", color: "#c00" }}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -276,7 +276,7 @@ function ImpactGrid({ label }: { label: string }) {
         {positions.map((pos, i) => (
           <button key={i} onClick={() => setSelected(selected === i ? null : i)}
             style={{
-              width: 28, height: 22, fontSize: 11, border: "1px solid #bbb", cursor: "pointer",
+              width: 28, height: 22, fontSize: 13, border: "1px solid #bbb", cursor: "pointer",
               background: selected === i ? C.green : "#f0f0f0",
               color: selected === i ? "#fff" : "#444", fontWeight: selected === i ? "bold" : "normal",
             }}>{pos}</button>
@@ -363,7 +363,7 @@ export default function LiabilityAssessmentPage() {
             {[["0%","Insured Suggested Neg"],["100%","Claimant Suggested Neg"],["Left of Center","Accident Type"]].map(([v,l]) => (
               <div key={l} style={{ flex: 1, padding: "4px 4px", textAlign: "center", borderRight: C.borderLight, background: "#f8f9fb" }}>
                 <div style={{ fontWeight: "bold", fontSize: 14, color: C.navy }}>{v}</div>
-                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.2 }}>{l}</div>
+                <div style={{ fontSize: 13, color: "#666", lineHeight: 1.2 }}>{l}</div>
               </div>
             ))}
           </div>
