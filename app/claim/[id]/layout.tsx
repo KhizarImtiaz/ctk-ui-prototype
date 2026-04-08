@@ -5,7 +5,7 @@ import { useParams, usePathname } from "next/navigation";
 const NAV = [
   { label: "Location, Details and Type",            path: "" },
   { label: "Investigation Checklist & Legal Summary", path: "/investigation-checklist" },
-  { label: "Liability Assessment",                   path: "/liability-assessment" },
+  { label: "Assessment",                              path: "/liability-assessment" },
   { label: "Negotiation & Settlement",               path: "/negotiation" },
   { label: "Claim Summary",                          path: "/claim-summary" },
   { label: "Just in Time Training",                  path: "/training" },
@@ -25,10 +25,10 @@ export default function ClaimLayout({ children }: { children: React.ReactNode })
           <span style={{ fontWeight: "bold", fontSize: 13, letterSpacing: "0.02em" }}>
             🛡 ClaimToolkit
           </span>
-          <span style={{ color: "#8ea8c8", fontSize: 11 }}>AUTO LIABILITY</span>
+          <span style={{ color: "#8ea8c8", fontSize: 11 }}>AUTO ASSESSMENT</span>
         </div>
         <nav style={{ display: "flex", gap: 18 }}>
-          {["New Assessment", "Find Assessment", "Auto Liability Admin"].map(l => (
+          {["New Assessment", "Find Assessment", "Auto Assessment Admin"].map(l => (
             <a key={l} href="#" onClick={e => e.preventDefault()}
               style={{ color: "#cdd8e8", fontSize: 11, textDecoration: "none" }}
               onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
@@ -56,7 +56,7 @@ export default function ClaimLayout({ children }: { children: React.ReactNode })
         </main>
 
         {/* Right sidebar */}
-        <aside style={{ width: 350, minWidth: 350, background: "var(--ctk-sidebar-bg)", borderLeft: "1px solid var(--ctk-border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <aside style={{ width: 400, minWidth: 350, background: "var(--ctk-sidebar-bg)", borderLeft: "1px solid var(--ctk-border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           {/* Scene map thumbnail */}
           <div style={{ borderBottom: "1px solid var(--ctk-border)", padding: 6, textAlign: "center" }}>
             <div style={{ width: "100%", height: 110, background: "#b8c8b8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", marginBottom: 4, position: "relative", overflow: "hidden" }}>
