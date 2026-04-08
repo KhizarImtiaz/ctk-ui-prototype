@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATE_LAW = "Alabama: Contributory - Any Negligence Eliminates Recovery; Check Company Procedure";
@@ -71,6 +71,149 @@ const inputStyle: React.CSSProperties = {
   fontFamily: "Arial,sans-serif", background: "#fff", color: "#222",
   width: "100%",
 };
+
+// ─── Document types ───────────────────────────────────────────────────────────
+interface UploadedDoc {
+  id: string;
+  name: string;
+  size: string;
+  uploadedAt: string;
+}
+
+// ─── Evidence section component ───────────────────────────────────────────────
+function EvidenceSection({
+  title, subtitle, notes, onNotesChange,
+  uploadedDocs, onUpload,
+  attachedIds, onAttach, onDetach,
+}: {
+  title: string;
+  subtitle: string;
+  notes: string;
+  onNotesChange: (v: string) => void;
+  uploadedDocs: UploadedDoc[];
+  onUpload: (doc: UploadedDoc) => void;
+  attachedIds: string[];
+  onAttach: (id: string) => void;
+  onDetach: (id: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [showAttachPicker, setShowAttachPicker] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach(f => {
+      const doc: UploadedDoc = {
+        id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: f.name,
+        size: f.size > 1024 * 1024
+          ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${(f.size / 1024).toFixed(0)} KB`,
+        uploadedAt: new Date().toLocaleDateString(),
+      };
+      onUpload(doc);
+      onAttach(doc.id);
+    });
+    e.target.value = "";
+  };
+
+  const unattachedDocs = uploadedDocs.filter(d => !attachedIds.includes(d.id));
+  const attachedDocs   = uploadedDocs.filter(d => attachedIds.includes(d.id));
+
+  return (
+    <div style={{ padding: "10px 12px", background: "#fff" }}>
+      {/* Header */}
+      <div style={{ fontSize: 11, fontWeight: "bold", color: C.navy, marginBottom: 2 }}>{title}</div>
+      <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>{subtitle}</div>
+
+      {/* Notes textarea */}
+      <textarea
+        rows={3}
+        value={notes}
+        onChange={e => onNotesChange(e.target.value)}
+        placeholder="Enter key facts and notes…"
+        style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical", marginBottom: 8, boxSizing: "border-box" as const }}
+      />
+
+      {/* Attached documents */}
+      {attachedDocs.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: "bold", color: "#555", marginBottom: 4 }}>Attached Documents</div>
+          <div style={{ display: "flex", flexDirection: "column" as const, gap: 3 }}>
+            {attachedDocs.map(doc => (
+              <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0f4f0", border: "1px solid #b8d8b8", borderRadius: 2, padding: "3px 8px" }}>
+                <span style={{ fontSize: 14, lineHeight: 1 }}>📄</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, color: "#333", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+                  <div style={{ fontSize: 9, color: "#888" }}>{doc.size} · Uploaded {doc.uploadedAt}</div>
+                </div>
+                <button
+                  onClick={() => onDetach(doc.id)}
+                  title="Detach"
+                  style={{ fontSize: 10, padding: "1px 7px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold", flexShrink: 0 }}
+                >Detach</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+        {/* Upload new */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          style={{ fontSize: 10, padding: "3px 10px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+        >
+          ⬆ Upload Document
+        </button>
+        <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} />
+
+        {/* Attach existing */}
+        {unattachedDocs.length > 0 && (
+          <div style={{ position: "relative" as const }}>
+            <button
+              onClick={() => setShowAttachPicker(v => !v)}
+              style={{ fontSize: 10, padding: "3px 10px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+            >
+              📎 Attach Existing ({unattachedDocs.length})
+            </button>
+            {showAttachPicker && (
+              <div style={{
+                position: "absolute" as const, top: "110%", left: 0, zIndex: 100,
+                background: "#fff", border: "1px solid #aaa", borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)", minWidth: 240, padding: 6,
+              }}>
+                <div style={{ fontSize: 10, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>
+                  Select to attach:
+                </div>
+                {unattachedDocs.map(doc => (
+                  <div
+                    key={doc.id}
+                    onClick={() => { onAttach(doc.id); setShowAttachPicker(false); }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", cursor: "pointer", borderRadius: 2, marginBottom: 2 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#e8f0e8")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <span style={{ fontSize: 13 }}>📄</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+                      <div style={{ fontSize: 9, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setShowAttachPicker(false)}
+                  style={{ fontSize: 9, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}
+                >Close</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -170,11 +313,29 @@ export default function LiabilityAssessmentPage() {
   const [clmLow,    setClmLow]    = useState("0%");
   const [deny,      setDeny]      = useState("No");
 
-  // Evidence
+  // Evidence notes
   const [rowEvid, setRowEvid]     = useState("");
   const [spdEvid, setSpdEvid]     = useState("");
   const [lkEvid,  setLkEvid]      = useState("");
   const [avEvid,  setAvEvid]      = useState("");
+
+  // Shared document pool (all uploaded docs across all sections)
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
+
+  // Per-section attached doc IDs
+  const [rowAttached, setRowAttached] = useState<string[]>([]);
+  const [spdAttached, setSpdAttached] = useState<string[]>([]);
+  const [lkAttached,  setLkAttached]  = useState<string[]>([]);
+  const [avAttached,  setAvAttached]  = useState<string[]>([]);
+
+  const addDoc = (doc: UploadedDoc) =>
+    setUploadedDocs(prev => prev.some(d => d.id === doc.id) ? prev : [...prev, doc]);
+
+  const makeAttach = (setter: React.Dispatch<React.SetStateAction<string[]>>) =>
+    (id: string) => setter(prev => prev.includes(id) ? prev : [...prev, id]);
+
+  const makeDetach = (setter: React.Dispatch<React.SetStateAction<string[]>>) =>
+    (id: string) => setter(prev => prev.filter(x => x !== id));
 
   const calc = () => alert("Calculate Suggested & Update Duties (prototype)");
   const save = () => alert("Saved! (prototype)");
@@ -365,78 +526,80 @@ export default function LiabilityAssessmentPage() {
         </div>
       </div>
 
-      {/* ── Duties Breached + Evidence table ────────────────────────── */}
+      {/* ── Evidence of Duty Breaches ────────────────────────────────── */}
       <div style={{ border: C.border, marginTop: 2 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ background: "#c0c8d8", fontSize: 11, fontWeight: "bold", padding: "5px 10px", textAlign: "left", border: C.border, color: C.navy, width: "45%" }}>
-                Duties Breached
-              </th>
-              <th style={{ background: "#c0c8d8", fontSize: 11, fontWeight: "bold", padding: "5px 10px", textAlign: "left", border: C.border, color: C.navy }}>
-                Evidence of Duty Breaches
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* ROW */}
-            <tr>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top", background: C.altRow }}>
-                <div style={{ fontSize: 11, fontWeight: "bold", color: C.blue, marginBottom: 3 }}>Right of Way Duties</div>
-                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 4 }}>(What Duty Was Breached to Give ROW?)</div>
-                <div style={{ fontSize: 10, color: "#333", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{ROW_DUTY_TEXT}</div>
-              </td>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top", background: C.altRow }}>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: C.navy, marginBottom: 4 }}>Right of Way Key Facts<br/>(What Evidence Do You Have That Proves)</div>
-                <textarea rows={6} value={rowEvid} onChange={e => setRowEvid(e.target.value)}
-                  style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical" }} />
-              </td>
-            </tr>
+        {/* Section header */}
+        <div style={{ background: "#c0c8d8", fontSize: 11, fontWeight: "bold", padding: "6px 12px", color: C.navy, borderBottom: C.border }}>
+          Evidence of Duty Breaches
+        </div>
 
-            {/* Speed */}
-            <tr>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top" }}>
-                <div style={{ fontSize: 11, fontWeight: "bold", color: C.blue, marginBottom: 3 }}>Speed Duties</div>
-                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>(What Duty Was Breached in Speed?)</div>
-              </td>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top" }}>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: C.navy, marginBottom: 4 }}>Speed Key Facts<br/>(What Evidence Do You Have That Proves)</div>
-                <textarea rows={4} value={spdEvid} onChange={e => setSpdEvid(e.target.value)}
-                  style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical" }} />
-              </td>
-            </tr>
+        {/* ROW */}
+        <div style={{ borderBottom: C.border, background: C.altRow }}>
+          <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Right of Way Duties</span>
+            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached to Give ROW?</span>
+          </div>
+          <EvidenceSection
+            title="Right of Way Key Facts"
+            subtitle="What Evidence Do You Have That Proves the Duty Breach?"
+            notes={rowEvid} onNotesChange={setRowEvid}
+            uploadedDocs={uploadedDocs} onUpload={addDoc}
+            attachedIds={rowAttached}
+            onAttach={makeAttach(setRowAttached)}
+            onDetach={makeDetach(setRowAttached)}
+          />
+        </div>
 
-            {/* Lookout */}
-            <tr>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top", background: C.altRow }}>
-                <div style={{ fontSize: 11, fontWeight: "bold", color: C.blue, marginBottom: 3 }}>Lookout Duties</div>
-                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 4 }}>(What Look Out Duties did ROW Driver Breach?)</div>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: "#333", marginBottom: 2 }}>CONCENTRATION (page 31)</div>
-                <div style={{ fontSize: 10, color: "#333", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{CONCENTRATION_TEXT}</div>
-              </td>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top", background: C.altRow }}>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: C.navy, marginBottom: 4 }}>Lookout Key Facts<br/>(What Evidence Do You Have That Proves)</div>
-                <textarea rows={6} value={lkEvid} onChange={e => setLkEvid(e.target.value)}
-                  style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical" }} />
-              </td>
-            </tr>
+        {/* Speed */}
+        <div style={{ borderBottom: C.border }}>
+          <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Speed Duties</span>
+            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached in Speed?</span>
+          </div>
+          <EvidenceSection
+            title="Speed Key Facts"
+            subtitle="What Evidence Do You Have That Proves the Duty Breach?"
+            notes={spdEvid} onNotesChange={setSpdEvid}
+            uploadedDocs={uploadedDocs} onUpload={addDoc}
+            attachedIds={spdAttached}
+            onAttach={makeAttach(setSpdAttached)}
+            onDetach={makeDetach(setSpdAttached)}
+          />
+        </div>
 
-            {/* Avoidance */}
-            <tr>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top" }}>
-                <div style={{ fontSize: 11, fontWeight: "bold", color: C.blue, marginBottom: 3 }}>Avoidance Duties</div>
-                <div style={{ fontSize: 10, color: "#666", fontStyle: "italic", marginBottom: 4 }}>(What Avoidance Duties did ROW Driver Breach?)</div>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: "#333", marginBottom: 2 }}>SPEED REGULATIONS (page 50)</div>
-                <div style={{ fontSize: 10, color: "#333", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{SPEED_REGS_TEXT}</div>
-              </td>
-              <td style={{ border: C.borderLight, padding: "8px 10px", verticalAlign: "top" }}>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: C.navy, marginBottom: 4 }}>Avoidance Key Facts<br/>(What Evidence Do You Have That Proves)</div>
-                <textarea rows={6} value={avEvid} onChange={e => setAvEvid(e.target.value)}
-                  style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical" }} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {/* Lookout */}
+        <div style={{ borderBottom: C.border, background: C.altRow }}>
+          <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Lookout Duties</span>
+            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Look Out Duties did ROW Driver Breach?</span>
+          </div>
+          <EvidenceSection
+            title="Lookout Key Facts"
+            subtitle="What Evidence Do You Have That Proves the Duty Breach?"
+            notes={lkEvid} onNotesChange={setLkEvid}
+            uploadedDocs={uploadedDocs} onUpload={addDoc}
+            attachedIds={lkAttached}
+            onAttach={makeAttach(setLkAttached)}
+            onDetach={makeDetach(setLkAttached)}
+          />
+        </div>
+
+        {/* Avoidance */}
+        <div>
+          <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Avoidance Duties</span>
+            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Avoidance Duties did ROW Driver Breach?</span>
+          </div>
+          <EvidenceSection
+            title="Avoidance Key Facts"
+            subtitle="What Evidence Do You Have That Proves the Duty Breach?"
+            notes={avEvid} onNotesChange={setAvEvid}
+            uploadedDocs={uploadedDocs} onUpload={addDoc}
+            attachedIds={avAttached}
+            onAttach={makeAttach(setAvAttached)}
+            onDetach={makeDetach(setAvAttached)}
+          />
+        </div>
       </div>
 
       {/* Save */}
