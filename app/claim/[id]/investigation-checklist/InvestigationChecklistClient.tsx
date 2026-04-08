@@ -87,12 +87,12 @@ const S = {
     display: "flex", alignItems: "center", gap: 6,
     background: "#f0f4f0", border: "1px solid var(--ctk-border)",
     borderLeft: "4px solid var(--ctk-green)", padding: "6px 10px",
-    fontWeight: "bold", fontSize: 13, color: "var(--ctk-navy)",
+    fontWeight: "bold", fontSize: 15, color: "var(--ctk-navy)",
   },
   tabRow: { display: "flex", border: "1px solid var(--ctk-border)", background: "#e8e8e8" },
   tab: (active: boolean): React.CSSProperties => ({
     flex: 1, padding: "7px 10px", border: "none", cursor: "pointer", fontWeight: "bold",
-    fontSize: 12, textAlign: "center" as const,
+    fontSize: 14, textAlign: "center" as const,
     background: active ? "var(--ctk-green)" : "#e8e8e8",
     color: active ? "#fff" : "#333",
     transition: "background 0.15s",
@@ -100,13 +100,13 @@ const S = {
   // Checklist
   checkWrap: { display: "flex", border: "1px solid var(--ctk-border)", minHeight: 480 },
   sidebarWrap: { width: 200, borderRight: "1px solid var(--ctk-border)", background: "#f8f8f8", overflowY: "auto" as const, flexShrink: 0 },
-  sidebarHead: { background: "var(--ctk-navy)", color: "#fff", fontWeight: "bold", fontSize: 12, padding: "6px 8px" },
+  sidebarHead: { background: "var(--ctk-navy)", color: "#fff", fontWeight: "bold", fontSize: 14, padding: "6px 8px" },
   groupWrap: (active: boolean, enabled: boolean): React.CSSProperties => ({
     borderBottom: "1px solid #ddd",
     background: active ? "#d8ecd8" : enabled ? "transparent" : "#fff0f0",
   }),
   groupLabelRow: { display: "flex" as const, alignItems: "center", justifyContent: "space-between", padding: "4px 8px", cursor: "pointer" },
-  groupLabel: { fontWeight: "bold", fontSize: 11, color: "#2e5a2e" },
+  groupLabel: { fontWeight: "bold", fontSize: 13, color: "#2e5a2e" },
   toggleTrack: (on: boolean): React.CSSProperties => ({
     display: "inline-flex", alignItems: "center",
     width: 28, height: 14, borderRadius: 7, flexShrink: 0,
@@ -121,7 +121,7 @@ const S = {
     boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
   }),
   sideItem: (status: Status, disabled?: boolean): React.CSSProperties => ({
-    fontSize: 10, padding: "1px 8px 1px 16px", lineHeight: 1.5,
+    fontSize: 12, padding: "1px 8px 1px 16px", lineHeight: 1.5,
     color: disabled ? "#bbb" : status === "confirmed" ? "#060" : status === "disputed" ? "#c00" : "#444",
     textDecoration: disabled ? "none" : status === "confirmed" ? "line-through" : "none",
     fontWeight: !disabled && status === "disputed" ? "bold" : "normal",
@@ -134,7 +134,7 @@ const S = {
   contentWrap: { flex: 1, display: "flex", flexDirection: "column" as const, minWidth: 0 },
   toolbar: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "5px 10px", background: "#f0f0f0", borderBottom: "1px solid #ddd", fontSize: 11,
+    padding: "5px 10px", background: "#f0f0f0", borderBottom: "1px solid #ddd", fontSize: 13,
   },
   disputeList: { flex: 1, overflowY: "auto" as const, padding: 6, display: "flex", flexDirection: "column" as const, gap: 4 },
   // Dispute row
@@ -147,10 +147,10 @@ const S = {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "5px 8px", borderBottom: "1px solid #e0e0e0", background: "#f4f6f8", gap: 8,
   },
-  dLabel: { fontSize: 11, fontWeight: "bold", color: "#333", flex: 1 },
+  dLabel: { fontSize: 13, fontWeight: "bold", color: "#333", flex: 1 },
   statusBtns: { display: "flex", gap: 3 },
   statusBtn: (active: boolean, variant: "normal" | "confirm" | "dispute"): React.CSSProperties => ({
-    padding: "2px 8px", fontSize: 10, border: "1px solid #bbb", cursor: "pointer", borderRadius: 2,
+    padding: "2px 8px", fontSize: 12, border: "1px solid #bbb", cursor: "pointer", borderRadius: 2,
     background: !active ? "#e8e8e8" : variant === "confirm" ? "var(--ctk-green)" : variant === "dispute" ? "#c00" : "#d0d8e8",
     color: !active ? "#444" : variant === "confirm" || variant === "dispute" ? "#fff" : "#224",
     fontWeight: active ? "bold" : "normal",
@@ -160,25 +160,25 @@ const S = {
   fieldRow: { display: "flex", gap: 8 },
   field: { flex: 1, display: "flex", flexDirection: "column" as const, gap: 2 },
   fieldSm: { width: 150, flexShrink: 0, display: "flex", flexDirection: "column" as const, gap: 2 },
-  fLabel: { fontSize: 10, color: "#666", fontWeight: "bold" },
-  textarea: { fontFamily: "Arial,sans-serif", fontSize: 11, padding: "3px 5px", border: "1px solid #ccc", resize: "vertical" as const, width: "100%" },
-  input: { fontFamily: "Arial,sans-serif", fontSize: 11, padding: "3px 5px", border: "1px solid #ccc", width: "100%" },
-  select: { fontFamily: "Arial,sans-serif", fontSize: 11, padding: "3px 4px", border: "1px solid #ccc", width: "100%" },
+  fLabel: { fontSize: 12, color: "#666", fontWeight: "bold" },
+  textarea: { fontFamily: "Arial,sans-serif", fontSize: 13, padding: "3px 5px", border: "1px solid #ccc", resize: "vertical" as const, width: "100%" },
+  input: { fontFamily: "Arial,sans-serif", fontSize: 13, padding: "3px 5px", border: "1px solid #ccc", width: "100%" },
+  select: { fontFamily: "Arial,sans-serif", fontSize: 13, padding: "3px 4px", border: "1px solid #ccc", width: "100%" },
   // Summary bar
   summaryBar: { display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: "#e8e8e8", borderTop: "1px solid #bbb", flexShrink: 0 },
   summaryCell: { display: "flex", flexDirection: "column" as const, alignItems: "center", minWidth: 52 },
-  summaryNum: (color?: string): React.CSSProperties => ({ fontSize: 16, fontWeight: "bold", color: color ?? "#333", lineHeight: 1 }),
-  summaryLbl: { fontSize: 9, color: "#666", textTransform: "uppercase" as const, letterSpacing: "0.03em" },
-  saveBtn: { marginLeft: "auto", padding: "4px 20px", background: "var(--ctk-green)", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer", fontSize: 12 },
+  summaryNum: (color?: string): React.CSSProperties => ({ fontSize: 19, fontWeight: "bold", color: color ?? "#333", lineHeight: 1 }),
+  summaryLbl: { fontSize: 11, color: "#666", textTransform: "uppercase" as const, letterSpacing: "0.03em" },
+  saveBtn: { marginLeft: "auto", padding: "4px 20px", background: "var(--ctk-green)", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer", fontSize: 14 },
   // Legal
   legalPanel: { border: "1px solid var(--ctk-border)", background: "#fff", padding: "16px 18px" },
   legalGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px 24px" },
   legalCell: { display: "flex", flexDirection: "column" as const, gap: 4 },
-  legalState: { fontSize: 13, fontWeight: "bold", color: "var(--ctk-navy)" },
-  legalRule: { fontSize: 11, color: "#333", lineHeight: 1.4 },
-  legalFLabel: { fontSize: 11, fontWeight: "bold", color: "#555" },
-  legalVal: { fontSize: 12, color: "#222" },
-  legalFlag: { fontSize: 11, color: "#c00", fontWeight: "bold" },
+  legalState: { fontSize: 15, fontWeight: "bold", color: "var(--ctk-navy)" },
+  legalRule: { fontSize: 13, color: "#333", lineHeight: 1.4 },
+  legalFLabel: { fontSize: 13, fontWeight: "bold", color: "#555" },
+  legalVal: { fontSize: 14, color: "#222" },
+  legalFlag: { fontSize: 13, color: "#c00", fontWeight: "bold" },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ function DisputeRow({
       <div style={S.dRowHeader}>
         <span style={S.dLabel}>{item.label}</span>
         {disabled
-          ? <span style={{ fontSize: 10, color: "#999", fontStyle: "italic" }}>Disabled</span>
+          ? <span style={{ fontSize: 12, color: "#999", fontStyle: "italic" }}>Disabled</span>
           : (
             <div style={S.statusBtns}>
               <button style={S.statusBtn(item.status === "unaddressed", "normal")} onClick={() => set("status", "unaddressed")}>Unaddressed</button>
@@ -238,22 +238,22 @@ function DisputeRow({
               </label>
               <button
                 onClick={() => onResolutionAdd(item.id)}
-                style={{ fontSize: 10, padding: "2px 8px", background: "var(--ctk-navy)", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+                style={{ fontSize: 12, padding: "2px 8px", background: "var(--ctk-navy)", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
               >+ Add Resolution Note</button>
             </div>
 
             {item.resolutionNotes.length === 0 && (
-              <div style={{ fontSize: 10, color: "#999", fontStyle: "italic", padding: "4px 0" }}>No resolution notes yet. Click "+ Add Resolution Note" to add one.</div>
+              <div style={{ fontSize: 12, color: "#999", fontStyle: "italic", padding: "4px 0" }}>No resolution notes yet. Click "+ Add Resolution Note" to add one.</div>
             )}
 
             {item.resolutionNotes.map((entry, idx) => (
               <div key={entry.entryId} style={{ border: "1px solid #d8d0d0", borderRadius: 2, marginBottom: 6, background: "#fffdf8" }}>
                 {/* Entry header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 8px", background: "#f0ede8", borderBottom: "1px solid #e0d8d0" }}>
-                  <span style={{ fontSize: 10, fontWeight: "bold", color: "#664", }}>Resolution Note #{idx + 1}</span>
+                  <span style={{ fontSize: 12, fontWeight: "bold", color: "#664", }}>Resolution Note #{idx + 1}</span>
                   <button
                     onClick={() => onResolutionRemove(item.id, entry.entryId)}
-                    style={{ fontSize: 9, padding: "1px 6px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}
+                    style={{ fontSize: 11, padding: "1px 6px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold" }}
                   >Remove</button>
                 </div>
                 {/* Entry fields */}
@@ -359,7 +359,7 @@ function ChecklistPanel({
             {filtered.length} item{filtered.length !== 1 ? "s" : ""}
             {activeGroup ? ` — ${activeGroup}` : ""}
           </span>
-          <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 11 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 13 }}>
             <input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} />
             Show confirmed items
           </label>
@@ -470,7 +470,7 @@ export default function InvestigationChecklistPage() {
   return (
     <div style={S.page}>
       <div style={S.titleBar}>
-        <span style={{ color: "var(--ctk-green)", fontSize: 10 }}>●</span>
+        <span style={{ color: "var(--ctk-green)", fontSize: 12 }}>●</span>
         Auto Investigation Checklist and Legal Summary
       </div>
 

@@ -51,23 +51,23 @@ const C = {
 };
 
 const colHeaderStyle = (bg = C.navy): React.CSSProperties => ({
-  background: bg, color: "#fff", fontSize: 12, fontWeight: "bold",
+  background: bg, color: "#fff", fontSize: 14, fontWeight: "bold",
   padding: "5px 8px", borderBottom: C.border,
 });
 
 const greenBtn: React.CSSProperties = {
   background: C.green, color: "#fff", border: "none",
-  padding: "5px 0", fontSize: 11, fontWeight: "bold",
+  padding: "5px 0", fontSize: 13, fontWeight: "bold",
   cursor: "pointer", width: "100%", textAlign: "center",
 };
 
 const selectStyle: React.CSSProperties = {
-  fontSize: 11, padding: "2px 4px", border: "1px solid #bbb",
+  fontSize: 13, padding: "2px 4px", border: "1px solid #bbb",
   width: "100%", fontFamily: "Arial,sans-serif", background: "#fff", color: "#222",
 };
 
 const inputStyle: React.CSSProperties = {
-  fontSize: 11, padding: "2px 4px", border: "1px solid #bbb",
+  fontSize: 13, padding: "2px 4px", border: "1px solid #bbb",
   fontFamily: "Arial,sans-serif", background: "#fff", color: "#222",
   width: "100%",
 };
@@ -123,8 +123,8 @@ function EvidenceSection({
   return (
     <div style={{ padding: "10px 12px", background: "#fff" }}>
       {/* Header */}
-      <div style={{ fontSize: 11, fontWeight: "bold", color: C.navy, marginBottom: 2 }}>{title}</div>
-      <div style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>{subtitle}</div>
+      <div style={{ fontSize: 13, fontWeight: "bold", color: C.navy, marginBottom: 2 }}>{title}</div>
+      <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>{subtitle}</div>
 
       {/* Notes textarea */}
       <textarea
@@ -132,25 +132,25 @@ function EvidenceSection({
         value={notes}
         onChange={e => onNotesChange(e.target.value)}
         placeholder="Enter key facts and notes…"
-        style={{ width: "100%", fontSize: 11, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical", marginBottom: 8, boxSizing: "border-box" as const }}
+        style={{ width: "100%", fontSize: 13, fontFamily: "Arial,sans-serif", padding: "4px 6px", border: "1px solid #ccc", resize: "vertical", marginBottom: 8, boxSizing: "border-box" as const }}
       />
 
       {/* Attached documents */}
       {attachedDocs.length > 0 && (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: "bold", color: "#555", marginBottom: 4 }}>Attached Documents</div>
+          <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 4 }}>Attached Documents</div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: 3 }}>
             {attachedDocs.map(doc => (
               <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0f4f0", border: "1px solid #b8d8b8", borderRadius: 2, padding: "3px 8px" }}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>📄</span>
+                <span style={{ fontSize: 16, lineHeight: 1 }}>📄</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: "#333", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                  <div style={{ fontSize: 9, color: "#888" }}>{doc.size} · Uploaded {doc.uploadedAt}</div>
+                  <div style={{ fontSize: 13, color: "#333", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+                  <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · Uploaded {doc.uploadedAt}</div>
                 </div>
                 <button
                   onClick={() => onDetach(doc.id)}
                   title="Detach"
-                  style={{ fontSize: 10, padding: "1px 7px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold", flexShrink: 0 }}
+                  style={{ fontSize: 12, padding: "1px 7px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00", fontWeight: "bold", flexShrink: 0 }}
                 >Detach</button>
               </div>
             ))}
@@ -163,7 +163,7 @@ function EvidenceSection({
         {/* Upload new */}
         <button
           onClick={() => fileRef.current?.click()}
-          style={{ fontSize: 10, padding: "3px 10px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+          style={{ fontSize: 12, padding: "3px 10px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
         >
           ⬆ Upload Document
         </button>
@@ -174,7 +174,7 @@ function EvidenceSection({
           <div style={{ position: "relative" as const }}>
             <button
               onClick={() => setShowAttachPicker(v => !v)}
-              style={{ fontSize: 10, padding: "3px 10px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
+              style={{ fontSize: 12, padding: "3px 10px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}
             >
               📎 Attach Existing ({unattachedDocs.length})
             </button>
@@ -184,7 +184,7 @@ function EvidenceSection({
                 background: "#fff", border: "1px solid #aaa", borderRadius: 2,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)", minWidth: 240, padding: 6,
               }}>
-                <div style={{ fontSize: 10, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>
+                <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>
                   Select to attach:
                 </div>
                 {unattachedDocs.map(doc => (
@@ -195,16 +195,16 @@ function EvidenceSection({
                     onMouseEnter={e => (e.currentTarget.style.background = "#e8f0e8")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
-                    <span style={{ fontSize: 13 }}>📄</span>
+                    <span style={{ fontSize: 15 }}>📄</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                      <div style={{ fontSize: 9, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
+                      <div style={{ fontSize: 13, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
                     </div>
                   </div>
                 ))}
                 <button
                   onClick={() => setShowAttachPicker(false)}
-                  style={{ fontSize: 9, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}
+                  style={{ fontSize: 11, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}
                 >Close</button>
               </div>
             )}
@@ -219,43 +219,43 @@ function EvidenceSection({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 5 }}>
-      <div style={{ fontSize: 10, color: "#444", marginBottom: 1, lineHeight: 1.3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "#444", marginBottom: 1, lineHeight: 1.3 }}>{label}</div>
       {children}
     </div>
   );
 }
 
 function FlagText({ children, color = "#c00" }: { children: React.ReactNode; color?: string }) {
-  return <div style={{ fontSize: 10, color, fontWeight: "bold", marginTop: 2 }}>{children}</div>;
+  return <div style={{ fontSize: 12, color, fontWeight: "bold", marginTop: 2 }}>{children}</div>;
 }
 
 function DutiesTable({ title, rows }: { title: string; rows: { title: string; duty: string }[] }) {
   return (
     <div style={{ marginBottom: 6, border: C.border }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#e8eef4", padding: "3px 6px", borderBottom: C.border }}>
-        <span style={{ fontWeight: "bold", fontSize: 11, color: C.navy }}>{title}</span>
-        <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 10, color: C.blue }}>Add Duties</a>
+        <span style={{ fontWeight: "bold", fontSize: 13, color: C.navy }}>{title}</span>
+        <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.blue }}>Add Duties</a>
       </div>
       {rows.length === 0 ? (
-        <div style={{ padding: "4px 6px", fontSize: 10, color: "#666", fontStyle: "italic" }}>No {title} Duties Breached.</div>
+        <div style={{ padding: "4px 6px", fontSize: 12, color: "#666", fontStyle: "italic" }}>No {title} Duties Breached.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f0f4f8" }}>
               {["Title", "Duty (Click to Freeze)", "Delete"].map(h => (
-                <th key={h} style={{ fontSize: 10, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, textAlign: "left", color: "#444", fontWeight: "bold" }}>{h}</th>
+                <th key={h} style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, textAlign: "left", color: "#444", fontWeight: "bold" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f8f8f8" }}>
-                <td style={{ fontSize: 10, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, verticalAlign: "top", maxWidth: 80, wordBreak: "break-word" }}>{r.title}</td>
-                <td style={{ fontSize: 10, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, color: "#555", maxWidth: 120 }}>
+                <td style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, verticalAlign: "top", maxWidth: 80, wordBreak: "break-word" }}>{r.title}</td>
+                <td style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, color: "#555", maxWidth: 120 }}>
                   {r.duty.length > 60 ? r.duty.slice(0, 60) + "..." : r.duty}
                 </td>
                 <td style={{ padding: "2px 4px", borderBottom: C.borderLight }}>
-                  <button style={{ fontSize: 9, padding: "1px 6px", background: "#e8e8e8", border: "1px solid #bbb", cursor: "pointer", color: "#c00" }}>Delete</button>
+                  <button style={{ fontSize: 11, padding: "1px 6px", background: "#e8e8e8", border: "1px solid #bbb", cursor: "pointer", color: "#c00" }}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -271,12 +271,12 @@ function ImpactGrid({ label }: { label: string }) {
   const positions = ["FL", "F", "FR", "L", "C", "R", "BL", "B", "BR"];
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 10, color: "#444", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "#444", marginBottom: 2 }}>{label}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 28px)", gap: 2, width: "fit-content" }}>
         {positions.map((pos, i) => (
           <button key={i} onClick={() => setSelected(selected === i ? null : i)}
             style={{
-              width: 28, height: 22, fontSize: 9, border: "1px solid #bbb", cursor: "pointer",
+              width: 28, height: 22, fontSize: 11, border: "1px solid #bbb", cursor: "pointer",
               background: selected === i ? C.green : "#f0f0f0",
               color: selected === i ? "#fff" : "#444", fontWeight: selected === i ? "bold" : "normal",
             }}>{pos}</button>
@@ -341,10 +341,10 @@ export default function LiabilityAssessmentPage() {
   const save = () => alert("Saved! (prototype)");
 
   return (
-    <div style={{ fontFamily: "Arial,sans-serif", fontSize: 12, color: "#222", background: "#fff", display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ fontFamily: "Arial,sans-serif", fontSize: 14, color: "#222", background: "#fff", display: "flex", flexDirection: "column", gap: 6 }}>
 
       {/* ── Claim info bar ───────────────────────────────────────────── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, background: C.headerBg, border: C.border, padding: "4px 10px", fontSize: 11 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, background: C.headerBg, border: C.border, padding: "4px 10px", fontSize: 13 }}>
         <span><strong>Claim Number:</strong> Kh2000-Street-View-Test</span>
         <span><strong>Insured Name</strong> Insured-Street-View-</span>
         <span><strong>Date of Loss:</strong> 2/25/2026</span>
@@ -362,8 +362,8 @@ export default function LiabilityAssessmentPage() {
           <div style={{ display: "flex", borderBottom: C.borderLight }}>
             {[["0%","Insured Suggested Neg"],["100%","Claimant Suggested Neg"],["Left of Center","Accident Type"]].map(([v,l]) => (
               <div key={l} style={{ flex: 1, padding: "4px 4px", textAlign: "center", borderRight: C.borderLight, background: "#f8f9fb" }}>
-                <div style={{ fontWeight: "bold", fontSize: 12, color: C.navy }}>{v}</div>
-                <div style={{ fontSize: 9, color: "#666", lineHeight: 1.2 }}>{l}</div>
+                <div style={{ fontWeight: "bold", fontSize: 14, color: C.navy }}>{v}</div>
+                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.2 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -481,14 +481,14 @@ export default function LiabilityAssessmentPage() {
           <div style={colHeaderStyle()}>Actual Liability</div>
 
           <div style={{ padding: "6px 8px", borderBottom: C.borderLight }}>
-            <div style={{ fontSize: 11, color: C.green, fontWeight: "bold", lineHeight: 1.4 }}>{STATE_LAW}</div>
+            <div style={{ fontSize: 13, color: C.green, fontWeight: "bold", lineHeight: 1.4 }}>{STATE_LAW}</div>
           </div>
 
           <div style={{ padding: "4px 8px", borderBottom: C.borderLight, display: "flex", flexDirection: "column", gap: 2 }}>
-            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 10, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
+            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
               To Change the Claim Rep Who Owns the Assessment To You Click Here
             </a>
-            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 10, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
+            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
               To Change the Claim Rep To Someone Else, Click Here
             </a>
           </div>
@@ -503,7 +503,7 @@ export default function LiabilityAssessmentPage() {
               <div key={ri} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                 {(row as [string, string, (v: string) => void][]).map(([lbl, val, setter]) => (
                   <div key={lbl} style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, color: "#555", marginBottom: 1 }}>{lbl}</div>
+                    <div style={{ fontSize: 12, color: "#555", marginBottom: 1 }}>{lbl}</div>
                     <input style={{ ...inputStyle, width: "100%" }} value={val} onChange={e => setter(e.target.value)} />
                   </div>
                 ))}
@@ -513,12 +513,12 @@ export default function LiabilityAssessmentPage() {
 
           <div style={{ padding: "6px 8px", borderTop: C.borderLight, background: "#f8f8f8", display: "flex", alignItems: "center", gap: 8 }}>
             <button onClick={save}
-              style={{ background: C.green, color: "#fff", border: "none", padding: "4px 14px", fontSize: 11, fontWeight: "bold", cursor: "pointer" }}>
+              style={{ background: C.green, color: "#fff", border: "none", padding: "4px 14px", fontSize: 13, fontWeight: "bold", cursor: "pointer" }}>
               Save Changes
             </button>
-            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#333" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#333" }}>
               Deny Claimant?
-              <select value={deny} onChange={e => setDeny(e.target.value)} style={{ fontSize: 11, padding: "2px 3px", border: "1px solid #bbb", fontFamily: "Arial,sans-serif" }}>
+              <select value={deny} onChange={e => setDeny(e.target.value)} style={{ fontSize: 13, padding: "2px 3px", border: "1px solid #bbb", fontFamily: "Arial,sans-serif" }}>
                 <option>No</option><option>Yes</option>
               </select>
             </label>
@@ -529,15 +529,15 @@ export default function LiabilityAssessmentPage() {
       {/* ── Evidence of Duty Breaches ────────────────────────────────── */}
       <div style={{ border: C.border, marginTop: 2 }}>
         {/* Section header */}
-        <div style={{ background: "#c0c8d8", fontSize: 11, fontWeight: "bold", padding: "6px 12px", color: C.navy, borderBottom: C.border }}>
+        <div style={{ background: "#c0c8d8", fontSize: 13, fontWeight: "bold", padding: "6px 12px", color: C.navy, borderBottom: C.border }}>
           Evidence of Duty Breaches
         </div>
 
         {/* ROW */}
         <div style={{ borderBottom: C.border, background: C.altRow }}>
           <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Right of Way Duties</span>
-            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached to Give ROW?</span>
+            <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Right of Way Duties</span>
+            <span style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached to Give ROW?</span>
           </div>
           <EvidenceSection
             title="Right of Way Key Facts"
@@ -553,8 +553,8 @@ export default function LiabilityAssessmentPage() {
         {/* Speed */}
         <div style={{ borderBottom: C.border }}>
           <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Speed Duties</span>
-            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached in Speed?</span>
+            <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Speed Duties</span>
+            <span style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>— What Duty Was Breached in Speed?</span>
           </div>
           <EvidenceSection
             title="Speed Key Facts"
@@ -570,8 +570,8 @@ export default function LiabilityAssessmentPage() {
         {/* Lookout */}
         <div style={{ borderBottom: C.border, background: C.altRow }}>
           <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Lookout Duties</span>
-            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Look Out Duties did ROW Driver Breach?</span>
+            <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Lookout Duties</span>
+            <span style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>— What Look Out Duties did ROW Driver Breach?</span>
           </div>
           <EvidenceSection
             title="Lookout Key Facts"
@@ -587,8 +587,8 @@ export default function LiabilityAssessmentPage() {
         {/* Avoidance */}
         <div>
           <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: "bold", color: C.blue }}>Avoidance Duties</span>
-            <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>— What Avoidance Duties did ROW Driver Breach?</span>
+            <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Avoidance Duties</span>
+            <span style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>— What Avoidance Duties did ROW Driver Breach?</span>
           </div>
           <EvidenceSection
             title="Avoidance Key Facts"
@@ -605,7 +605,7 @@ export default function LiabilityAssessmentPage() {
       {/* Save */}
       <div style={{ textAlign: "center", padding: "6px 0 10px" }}>
         <button onClick={save}
-          style={{ background: C.green, color: "#fff", border: "none", padding: "5px 40px", fontSize: 12, fontWeight: "bold", cursor: "pointer" }}>
+          style={{ background: C.green, color: "#fff", border: "none", padding: "5px 40px", fontSize: 14, fontWeight: "bold", cursor: "pointer" }}>
           Save
         </button>
       </div>
