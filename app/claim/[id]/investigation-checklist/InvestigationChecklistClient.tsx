@@ -17,11 +17,13 @@ interface CheckItem {
   label: string;
   status: Status;
   disputeNote: string;
+  disputeNoteDate: string;
+  disputeNoteType: string;
   resolutionNotes: ResolutionEntry[];
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
-const SEED: Omit<CheckItem, "status" | "disputeNote" | "resolutionNotes">[] = [
+const SEED: Omit<CheckItem, "status" | "disputeNote" | "disputeNoteDate" | "disputeNoteType" | "resolutionNotes">[] = [
   { id: "date_loss",       group: "Incident Details",               label: "Confirm Date of Loss" },
   { id: "time_loss",       group: "Incident Details",               label: "Confirm Time of Loss" },
   { id: "loss_location",   group: "Incident Details",               label: "Confirm Loss Location" },
@@ -62,7 +64,7 @@ const newResolutionEntry = (): ResolutionEntry => ({
 });
 
 const INITIAL: CheckItem[] = SEED.map(s => ({
-  ...s, status: "unaddressed", disputeNote: "", resolutionNotes: [],
+  ...s, status: "unaddressed", disputeNote: "", disputeNoteDate: "", disputeNoteType: "", resolutionNotes: [],
 }));
 
 const LEGAL = {
@@ -118,12 +120,17 @@ const S = {
     left: on ? 15 : 1, transition: "left 0.2s",
     boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
   }),
-  sideItem: (status: Status): React.CSSProperties => ({
+  sideItem: (status: Status, disabled?: boolean): React.CSSProperties => ({
     fontSize: 10, padding: "1px 8px 1px 16px", lineHeight: 1.5,
-    color: status === "confirmed" ? "#060" : status === "disputed" ? "#c00" : "#444",
-    textDecoration: status === "confirmed" ? "line-through" : "none",
-    fontWeight: status === "disputed" ? "bold" : "normal",
+    color: disabled ? "#bbb" : status === "confirmed" ? "#060" : status === "disputed" ? "#c00" : "#444",
+    textDecoration: disabled ? "none" : status === "confirmed" ? "line-through" : "none",
+    fontWeight: !disabled && status === "disputed" ? "bold" : "normal",
+    fontStyle: disabled ? "italic" : "normal",
   }),
+  dRowDisabled: {
+    border: "1px solid #ddd", borderRadius: 2,
+    background: "#f5f5f5", opacity: 0.6, pointerEvents: "none" as const,
+  },
   contentWrap: { flex: 1, display: "flex", flexDirection: "column" as const, minWidth: 0 },
   toolbar: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -176,9 +183,10 @@ const S = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function DisputeRow({
-  item, onChange, onResolutionAdd, onResolutionChange, onResolutionRemove,
+  item, disabled, onChange, onResolutionAdd, onResolutionChange, onResolutionRemove,
 }: {
   item: CheckItem;
+  disabled?: boolean;
   onChange: (id: string, field: string, val: string) => void;
   onResolutionAdd: (id: string) => void;
   onResolutionChange: (id: string, entryId: string, field: string, val: string) => void;
@@ -186,22 +194,36 @@ function DisputeRow({
 }) {
   const set = (field: string, val: string) => onChange(item.id, field, val);
   return (
-    <div style={S.dRow(item.status)}>
+    <div style={disabled ? S.dRowDisabled : S.dRow(item.status)}>
       <div style={S.dRowHeader}>
         <span style={S.dLabel}>{item.label}</span>
-        <div style={S.statusBtns}>
-          <button style={S.statusBtn(item.status === "unaddressed", "normal")} onClick={() => set("status", "unaddressed")}>Unaddressed</button>
-          <button style={S.statusBtn(item.status === "confirmed", "confirm")} onClick={() => set("status", "confirmed")}>Confirmed</button>
-          <button style={S.statusBtn(item.status === "disputed", "dispute")} onClick={() => set("status", "disputed")}>Disputed</button>
-        </div>
+        {disabled
+          ? <span style={{ fontSize: 10, color: "#999", fontStyle: "italic" }}>Disabled</span>
+          : (
+            <div style={S.statusBtns}>
+              <button style={S.statusBtn(item.status === "unaddressed", "normal")} onClick={() => set("status", "unaddressed")}>Unaddressed</button>
+              <button style={S.statusBtn(item.status === "confirmed", "confirm")} onClick={() => set("status", "confirmed")}>Confirmed</button>
+              <button style={S.statusBtn(item.status === "disputed", "dispute")} onClick={() => set("status", "disputed")}>Disputed</button>
+            </div>
+          )
+        }
       </div>
-      {item.status === "disputed" && (
+      {!disabled && item.status === "disputed" && (
         <div style={S.disputeFields}>
-          {/* Dispute Notes */}
+          {/* Dispute Notes + Note Date + Note Type */}
           <div style={S.fieldRow}>
             <div style={S.field}>
               <label style={S.fLabel}>Dispute Notes</label>
               <textarea style={S.textarea} rows={2} value={item.disputeNote} placeholder="Describe the dispute…" onChange={e => set("disputeNote", e.target.value)} />
+            </div>
+            <div style={S.fieldSm}>
+              <label style={S.fLabel}>Note Date</label>
+              <input type="date" style={S.input} value={item.disputeNoteDate} onChange={e => set("disputeNoteDate", e.target.value)} />
+              <label style={{ ...S.fLabel, marginTop: 6 }}>Note Type</label>
+              <select style={S.select} value={item.disputeNoteType} onChange={e => set("disputeNoteType", e.target.value)}>
+                <option value="">-- Select --</option>
+                {["Statement", "Police Report", "Physical Evidence", "Photos", "Witness", "Other"].map(o => <option key={o}>{o}</option>)}
+              </select>
             </div>
           </div>
 
@@ -294,12 +316,13 @@ function ChecklistPanel({
   const [showAll, setShowAll] = useState(false);
 
   const groups = [...new Set(items.map(i => i.group))];
+  const enabledItems = items.filter(i => groupEnabled[i.group] !== false);
   const visible = showAll ? items : items.filter(i => i.status !== "confirmed");
   const filtered = activeGroup ? visible.filter(i => i.group === activeGroup) : visible;
 
-  const confirmed = items.filter(i => i.status === "confirmed").length;
-  const disputed  = items.filter(i => i.status === "disputed").length;
-  const remaining = items.filter(i => i.status !== "confirmed").length;
+  const confirmed = enabledItems.filter(i => i.status === "confirmed").length;
+  const disputed  = enabledItems.filter(i => i.status === "disputed").length;
+  const remaining = enabledItems.filter(i => i.status !== "confirmed").length;
 
   return (
     <div style={S.checkWrap}>
@@ -315,14 +338,14 @@ function ChecklistPanel({
                 {/* Toggle switch */}
                 <span
                   style={S.toggleTrack(on)}
-                  title={on ? "Toggle OFF — marks all as Disputed" : "Toggle ON — resets all to Unaddressed"}
+                  title={on ? "Disable this group" : "Enable this group"}
                   onClick={e => { e.stopPropagation(); onGroupToggle(g); }}
                 >
                   <span style={S.toggleThumb(on)} />
                 </span>
               </div>
               {items.filter(i => i.group === g).map(item => (
-                <div key={item.id} style={S.sideItem(item.status)}>• {item.label}</div>
+                <div key={item.id} style={S.sideItem(item.status, !on)}>• {item.label}</div>
               ))}
             </div>
           );
@@ -348,6 +371,7 @@ function ChecklistPanel({
             : filtered.map(item => (
                 <DisputeRow
                   key={item.id} item={item}
+                  disabled={groupEnabled[item.group] === false}
                   onChange={onItemChange}
                   onResolutionAdd={onResolutionAdd}
                   onResolutionChange={onResolutionChange}
@@ -440,13 +464,7 @@ export default function InvestigationChecklistPage() {
     ));
 
   const handleGroupToggle = (group: string) => {
-    const turningOff = groupEnabled[group] !== false;
-    setGroupEnabled(prev => ({ ...prev, [group]: !turningOff }));
-    setItems(prev => prev.map(it =>
-      it.group === group
-        ? { ...it, status: turningOff ? "disputed" : "unaddressed" }
-        : it
-    ));
+    setGroupEnabled(prev => ({ ...prev, [group]: prev[group] === false ? true : false }));
   };
 
   return (
