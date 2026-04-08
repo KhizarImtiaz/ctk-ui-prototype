@@ -89,11 +89,25 @@ const S = {
   checkWrap: { display: "flex", border: "1px solid var(--ctk-border)", minHeight: 480 },
   sidebarWrap: { width: 200, borderRight: "1px solid var(--ctk-border)", background: "#f8f8f8", overflowY: "auto" as const, flexShrink: 0 },
   sidebarHead: { background: "var(--ctk-navy)", color: "#fff", fontWeight: "bold", fontSize: 12, padding: "6px 8px" },
-  groupWrap: (active: boolean): React.CSSProperties => ({
-    borderBottom: "1px solid #ddd", cursor: "pointer",
-    background: active ? "#d8ecd8" : "transparent",
+  groupWrap: (active: boolean, enabled: boolean): React.CSSProperties => ({
+    borderBottom: "1px solid #ddd",
+    background: active ? "#d8ecd8" : enabled ? "transparent" : "#fff0f0",
   }),
-  groupLabel: { fontWeight: "bold", fontSize: 11, padding: "4px 8px", color: "#2e5a2e" },
+  groupLabelRow: { display: "flex" as const, alignItems: "center", justifyContent: "space-between", padding: "4px 8px", cursor: "pointer" },
+  groupLabel: { fontWeight: "bold", fontSize: 11, color: "#2e5a2e" },
+  toggleTrack: (on: boolean): React.CSSProperties => ({
+    display: "inline-flex", alignItems: "center",
+    width: 28, height: 14, borderRadius: 7, flexShrink: 0,
+    background: on ? "var(--ctk-green)" : "#c00",
+    position: "relative", cursor: "pointer", transition: "background 0.2s",
+    border: "1px solid " + (on ? "#1a5c1a" : "#900"),
+  }),
+  toggleThumb: (on: boolean): React.CSSProperties => ({
+    position: "absolute", width: 10, height: 10, borderRadius: "50%",
+    background: "#fff", top: 1,
+    left: on ? 15 : 1, transition: "left 0.2s",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+  }),
   sideItem: (status: Status): React.CSSProperties => ({
     fontSize: 10, padding: "1px 8px 1px 16px", lineHeight: 1.5,
     color: status === "confirmed" ? "#060" : status === "disputed" ? "#c00" : "#444",
@@ -192,7 +206,14 @@ function DisputeRow({ item, onChange }: { item: CheckItem; onChange: (id: string
   );
 }
 
-function ChecklistPanel({ items, onItemChange }: { items: CheckItem[]; onItemChange: (id: string, field: string, val: string) => void }) {
+function ChecklistPanel({
+  items, onItemChange, groupEnabled, onGroupToggle,
+}: {
+  items: CheckItem[];
+  onItemChange: (id: string, field: string, val: string) => void;
+  groupEnabled: Record<string, boolean>;
+  onGroupToggle: (group: string) => void;
+}) {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -209,14 +230,27 @@ function ChecklistPanel({ items, onItemChange }: { items: CheckItem[]; onItemCha
       {/* Sidebar */}
       <div style={S.sidebarWrap}>
         <div style={S.sidebarHead}>Check List</div>
-        {groups.map(g => (
-          <div key={g} style={S.groupWrap(activeGroup === g)} onClick={() => setActiveGroup(activeGroup === g ? null : g)}>
-            <div style={S.groupLabel}>{g}</div>
-            {items.filter(i => i.group === g).map(item => (
-              <div key={item.id} style={S.sideItem(item.status)}>• {item.label}</div>
-            ))}
-          </div>
-        ))}
+        {groups.map(g => {
+          const on = groupEnabled[g] !== false;
+          return (
+            <div key={g} style={S.groupWrap(activeGroup === g, on)}>
+              <div style={S.groupLabelRow}>
+                <span style={{ ...S.groupLabel, flex: 1 }} onClick={() => setActiveGroup(activeGroup === g ? null : g)}>{g}</span>
+                {/* Toggle switch */}
+                <span
+                  style={S.toggleTrack(on)}
+                  title={on ? "Toggle OFF — marks all as Disputed" : "Toggle ON — resets all to Unaddressed"}
+                  onClick={e => { e.stopPropagation(); onGroupToggle(g); }}
+                >
+                  <span style={S.toggleThumb(on)} />
+                </span>
+              </div>
+              {items.filter(i => i.group === g).map(item => (
+                <div key={item.id} style={S.sideItem(item.status)}>• {item.label}</div>
+              ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Content */}
@@ -292,8 +326,24 @@ export default function InvestigationChecklistPage() {
   const [tab, setTab] = useState<"checklist" | "legal">("checklist");
   const [items, setItems] = useState<CheckItem[]>(INITIAL);
 
+  // All groups default to enabled (true). undefined = enabled.
+  const groups = [...new Set(SEED.map(s => s.group))];
+  const [groupEnabled, setGroupEnabled] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(groups.map(g => [g, true]))
+  );
+
   const handleChange = (id: string, field: string, val: string) =>
     setItems(prev => prev.map(it => it.id === id ? { ...it, [field]: val } : it));
+
+  const handleGroupToggle = (group: string) => {
+    const turningOff = groupEnabled[group] !== false;
+    setGroupEnabled(prev => ({ ...prev, [group]: !turningOff }));
+    setItems(prev => prev.map(it =>
+      it.group === group
+        ? { ...it, status: turningOff ? "disputed" : "unaddressed" }
+        : it
+    ));
+  };
 
   return (
     <div style={S.page}>
@@ -311,8 +361,15 @@ export default function InvestigationChecklistPage() {
         </button>
       </div>
 
-      {tab === "checklist" && <ChecklistPanel items={items} onItemChange={handleChange} />}
-      {tab === "legal"    && <LegalSummaryPanel />}
+      {tab === "checklist" && (
+        <ChecklistPanel
+          items={items}
+          onItemChange={handleChange}
+          groupEnabled={groupEnabled}
+          onGroupToggle={handleGroupToggle}
+        />
+      )}
+      {tab === "legal" && <LegalSummaryPanel />}
     </div>
   );
 }
