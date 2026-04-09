@@ -22,6 +22,22 @@ const CLAIM_PARTIES: { name: string; type: string; isInsured?: boolean }[] = [
   { name: "Farhan Nazarat", type: "Driver Who Failed To Yield (FTY)" },
 ];
 
+// ─── Mock claim documents (pre-loaded on page load) ──────────────────────────
+const MOCK_DOCS: UploadedDoc[] = [
+  { id: "doc-mock-001", name: "Historical_Weather_Report.pdf",          size: "1.2 MB", uploadedAt: "2/20/2026" },
+  { id: "doc-mock-002", name: "GENERAL_WEATHER_SECTION_REPORT.pdf",     size: "840 KB", uploadedAt: "2/21/2026" },
+  { id: "doc-mock-003", name: "Police_Report_CLM-2026-0847.pdf",        size: "512 KB", uploadedAt: "2/25/2026" },
+  { id: "doc-mock-004", name: "Insured_Driver_Statement.pdf",           size: "210 KB", uploadedAt: "2/26/2026" },
+  { id: "doc-mock-005", name: "Scene_Diagram_CLM-2026-0847.png",        size: "340 KB", uploadedAt: "2/26/2026" },
+];
+
+// Pre-attach docs to parties to match the reference image
+const INITIAL_PARTY_DOCS: Record<string, string[]> = {
+  "Khizar Imtiaz-0": ["doc-mock-001", "doc-mock-002"],
+  "Khizar Imtiaz-1": ["doc-mock-002"],
+  "Farhan Nazarat-2": ["doc-mock-001"],
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UploadedDoc {
   id: string;
@@ -49,15 +65,18 @@ interface DutyData {
 const makeDutyData = (): DutyData => ({
   note: "",
   locationNote: "",
-  parties: CLAIM_PARTIES.map((p, i) => ({
-    partyKey: `${p.name}-${i}`,
-    partyName: p.name,
-    partyType: p.type,
-    isInsured: !!p.isInsured,
-    agree: "",
-    summary: "",
-    attachedDocIds: [],
-  })),
+  parties: CLAIM_PARTIES.map((p, i) => {
+    const key = `${p.name}-${i}`;
+    return {
+      partyKey: key,
+      partyName: p.name,
+      partyType: p.type,
+      isInsured: !!p.isInsured,
+      agree: "",
+      summary: "",
+      attachedDocIds: INITIAL_PARTY_DOCS[key] ?? [],
+    };
+  }),
 });
 
 // ─── Shared style constants ───────────────────────────────────────────────────
@@ -450,7 +469,7 @@ export default function LiabilityAssessmentPage() {
   const [evidTab, setEvidTab] = useState<"evidence" | "summary">("evidence");
 
   // Shared uploaded docs pool
-  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>(MOCK_DOCS);
   const addDoc = (doc: UploadedDoc) =>
     setUploadedDocs(prev => prev.some(d => d.id === doc.id) ? prev : [...prev, doc]);
 
