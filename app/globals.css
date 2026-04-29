@@ -16,9 +16,9 @@
 * { box-sizing: border-box; }
 
 body {
-  background: #ffffff !important;
+  background: #f0f2f5 !important;
   color: #222222;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
   margin: 0;
 }

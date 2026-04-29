@@ -1,44 +1,8 @@
 "use client";
 import { useState, useRef } from "react";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const STATE_LAW = "Alabama: Contributory - Any Negligence Eliminates Recovery; Check Company Procedure";
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const ROW_DUTIES = [
-  { title: "Driving on the left", duty: "Driving on the (b) No vehicle shall be driven to the left side of the center of the roadway in overtaking and passing..." },
-];
-const LOOKOUT_DUTIES = [
-  { title: "Concentration", duty: "Concentration is one of the most important elements of safe driving. The driver's seat is no place for daydreaming..." },
-  { title: "Reasonable and Prudent Speed", duty: "" },
-];
-const AVOIDANCE_DUTIES = [
-  { title: "Reasonable and Prudent Speed", duty: "(a) No vehicle shall be driven to the left side..." },
-  { title: "SPEED REGULATIONS", duty: "Speed may not always, in itself, be the primary factor that turns a minor mishap..." },
-];
-
-const CLAIM_PARTIES: { name: string; type: string; isInsured?: boolean }[] = [
-  { name: "Khizar Imtiaz",  type: "Driver With the Right of Way (ROW)*", isInsured: true },
-  { name: "Khizar Imtiaz",  type: "Driver With the Right of Way (ROW)*", isInsured: true },
-  { name: "Farhan Nazarat", type: "Driver Who Failed To Yield (FTY)" },
-];
-
-// ─── Mock claim documents (pre-loaded on page load) ──────────────────────────
-const MOCK_DOCS: UploadedDoc[] = [
-  { id: "doc-mock-001", name: "Historical_Weather_Report.pdf",          size: "1.2 MB", uploadedAt: "2/20/2026" },
-  { id: "doc-mock-002", name: "GENERAL_WEATHER_SECTION_REPORT.pdf",     size: "840 KB", uploadedAt: "2/21/2026" },
-  { id: "doc-mock-003", name: "Police_Report_CLM-2026-0847.pdf",        size: "512 KB", uploadedAt: "2/25/2026" },
-  { id: "doc-mock-004", name: "Insured_Driver_Statement.pdf",           size: "210 KB", uploadedAt: "2/26/2026" },
-  { id: "doc-mock-005", name: "Scene_Diagram_CLM-2026-0847.png",        size: "340 KB", uploadedAt: "2/26/2026" },
-];
-
-// Pre-attach docs to parties to match the reference image
-const INITIAL_PARTY_DOCS: Record<string, string[]> = {
-  "Khizar Imtiaz-0": ["doc-mock-001", "doc-mock-002"],
-  "Khizar Imtiaz-1": ["doc-mock-002"],
-  "Farhan Nazarat-2": ["doc-mock-001"],
-};
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface UploadedDoc {
   id: string;
   name: string;
@@ -47,7 +11,7 @@ interface UploadedDoc {
 }
 
 interface PartyEvidence {
-  partyKey: string;   // unique key (name + index)
+  partyKey: string;
   partyName: string;
   partyType: string;
   isInsured: boolean;
@@ -58,20 +22,46 @@ interface PartyEvidence {
 
 interface DutyData {
   note: string;
-  locationNote: string;
   parties: PartyEvidence[];
 }
 
+interface BreachedDuty {
+  id: string;
+  title: string;
+  duty: string;
+}
+
+// ── Mock Data ─────────────────────────────────────────────────────────────────
+
+const MOCK_DOCS: UploadedDoc[] = [
+  { id: "doc-001", name: "Historical_Weather_Report.pdf",      size: "1.2 MB", uploadedAt: "2/20/2026" },
+  { id: "doc-002", name: "GENERAL_WEATHER_SECTION_REPORT.pdf", size: "840 KB", uploadedAt: "2/21/2026" },
+  { id: "doc-003", name: "Police_Report_CLM-2026-0847.pdf",    size: "512 KB", uploadedAt: "2/25/2026" },
+  { id: "doc-004", name: "Insured_Driver_Statement.pdf",       size: "210 KB", uploadedAt: "2/26/2026" },
+  { id: "doc-005", name: "Scene_Diagram_CLM-2026-0847.png",    size: "340 KB", uploadedAt: "2/26/2026" },
+];
+
+const CLAIM_PARTIES = [
+  { name: "Khizar Imtiaz",  type: "Driver With Right of Way (ROW)", isInsured: true  },
+  { name: "Khizar Imtiaz",  type: "Driver With Right of Way (ROW)", isInsured: true  },
+  { name: "Farhan Nazarat", type: "Driver Who Failed To Yield (FTY)", isInsured: false },
+];
+
+const INITIAL_PARTY_DOCS: Record<string, string[]> = {
+  "Khizar Imtiaz-0":  ["doc-001", "doc-002"],
+  "Khizar Imtiaz-1":  ["doc-002"],
+  "Farhan Nazarat-2": ["doc-001"],
+};
+
 const makeDutyData = (): DutyData => ({
   note: "",
-  locationNote: "",
   parties: CLAIM_PARTIES.map((p, i) => {
     const key = `${p.name}-${i}`;
     return {
       partyKey: key,
       partyName: p.name,
       partyType: p.type,
-      isInsured: !!p.isInsured,
+      isInsured: p.isInsured,
       agree: "",
       summary: "",
       attachedDocIds: INITIAL_PARTY_DOCS[key] ?? [],
@@ -79,92 +69,80 @@ const makeDutyData = (): DutyData => ({
   }),
 });
 
-// ─── Shared style constants ───────────────────────────────────────────────────
-const C = {
-  border: "1px solid #aaa",
-  borderLight: "1px solid #ddd",
-  navy: "#1e2b40",
-  green: "#2e7d2f",
-  blue: "#1a5ca8",
-  headerBg: "#d0d8e8",
-  altRow: "#f8f9fb",
-};
+const INITIAL_ROW_DUTIES: BreachedDuty[] = [
+  {
+    id: "row-1",
+    title: "Driving on the left",
+    duty: "No vehicle shall be driven to the left side of the center of the roadway in overtaking and passing another vehicle proceeding in the same direction…",
+  },
+];
+const INITIAL_LOOKOUT_DUTIES: BreachedDuty[] = [
+  { id: "lk-1", title: "Concentration", duty: "Concentration is one of the most important elements of safe driving. The driver's seat is no place for daydreaming…" },
+  { id: "lk-2", title: "Reasonable and Prudent Speed", duty: "Driver must maintain a proper lookout for potential hazards at all times." },
+];
+const INITIAL_AVOIDANCE_DUTIES: BreachedDuty[] = [
+  { id: "av-1", title: "Reasonable and Prudent Speed", duty: "No vehicle shall be driven to the left side…" },
+  { id: "av-2", title: "Speed Regulations", duty: "Speed may not always, in itself, be the primary factor that turns a minor mishap into a serious collision…" },
+];
 
-const colHeaderStyle = (bg = C.navy): React.CSSProperties => ({
-  background: bg, color: "#fff", fontSize: 14, fontWeight: "bold",
-  padding: "5px 8px", borderBottom: C.border,
-});
+// ── Primitive helpers ─────────────────────────────────────────────────────────
 
-const greenBtn: React.CSSProperties = {
-  background: C.green, color: "#fff", border: "none",
-  padding: "5px 0", fontSize: 13, fontWeight: "bold",
-  cursor: "pointer", width: "100%", textAlign: "center",
-};
-
-const selectStyle: React.CSSProperties = {
-  fontSize: 13, padding: "2px 4px", border: "1px solid #bbb",
-  width: "100%", fontFamily: "Arial,sans-serif", background: "#fff", color: "#222",
-};
-
-const inputStyle: React.CSSProperties = {
-  fontSize: 13, padding: "2px 4px", border: "1px solid #bbb",
-  fontFamily: "Arial,sans-serif", background: "#fff", color: "#222",
-  width: "100%",
-};
-
-const textareaStyle: React.CSSProperties = {
-  width: "100%", fontSize: 13, fontFamily: "Arial,sans-serif",
-  padding: "4px 6px", border: "1px solid #ccc", resize: "vertical" as const,
-  boxSizing: "border-box" as const,
-};
-
-// ─── Small helpers ────────────────────────────────────────────────────────────
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+function StatusBadge({ label, variant }: { label: string; variant: "blue" | "green" | "amber" | "slate" | "violet" }) {
+  const cls: Record<string, string> = {
+    blue:   "bg-blue-100 text-blue-700 border-blue-200",
+    green:  "bg-emerald-100 text-emerald-700 border-emerald-200",
+    amber:  "bg-amber-100 text-amber-700 border-amber-200",
+    slate:  "bg-slate-100 text-slate-600 border-slate-200",
+    violet: "bg-violet-100 text-violet-700 border-violet-200",
+  };
   return (
-    <div style={{ marginBottom: 5 }}>
-      <div style={{ fontSize: 12, color: "#444", marginBottom: 1, lineHeight: 1.3 }}>{label}</div>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${cls[variant]}`}>
+      {label}
+    </span>
+  );
+}
+
+function FieldGroup({ label, helper, children }: { label: string; helper?: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3">
+      <label className="block text-xs font-medium text-slate-500 mb-1 leading-tight">{label}</label>
       {children}
+      {helper && <p className="text-xs text-amber-600 mt-1 font-semibold">{helper}</p>}
     </div>
   );
 }
 
-function FlagText({ children, color = "#c00" }: { children: React.ReactNode; color?: string }) {
-  return <div style={{ fontSize: 12, color, fontWeight: "bold", marginTop: 2 }}>{children}</div>;
+function StyledSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full text-sm border border-slate-200 rounded-md px-2.5 py-1.5 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+    >
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
 }
 
-function DutiesTable({ title, rows }: { title: string; rows: { title: string; duty: string }[] }) {
+// ── Assessment Input Panel ────────────────────────────────────────────────────
+
+function AccordionCard({ title, icon, defaultOpen = true, children }: {
+  title: string; icon: string; defaultOpen?: boolean; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ marginBottom: 6, border: C.border }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#e8eef4", padding: "3px 6px", borderBottom: C.border }}>
-        <span style={{ fontWeight: "bold", fontSize: 13, color: C.navy }}>{title}</span>
-        <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.blue }}>Add Duties</a>
-      </div>
-      {rows.length === 0 ? (
-        <div style={{ padding: "4px 6px", fontSize: 12, color: "#666", fontStyle: "italic" }}>No {title} Duties Breached.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#f0f4f8" }}>
-              {["Title", "Duty (Click to Freeze)", "Delete"].map(h => (
-                <th key={h} style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, textAlign: "left", color: "#444", fontWeight: "bold" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f8f8f8" }}>
-                <td style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, verticalAlign: "top", maxWidth: 80, wordBreak: "break-word" }}>{r.title}</td>
-                <td style={{ fontSize: 12, padding: "2px 4px", borderBottom: C.borderLight, borderRight: C.borderLight, color: "#555", maxWidth: 120 }}>
-                  {r.duty.length > 60 ? r.duty.slice(0, 60) + "..." : r.duty}
-                </td>
-                <td style={{ padding: "2px 4px", borderBottom: C.borderLight }}>
-                  <button style={{ fontSize: 13, padding: "1px 6px", background: "#e8e8e8", border: "1px solid #bbb", cursor: "pointer", color: "#c00" }}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+    <div className="border border-slate-200 rounded-lg overflow-hidden mb-2.5 bg-white">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <span className="text-base">{icon}</span>
+          {title}
+        </span>
+        <span className="text-slate-300 text-xs font-bold">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <div className="px-4 pt-3 pb-2">{children}</div>}
     </div>
   );
 }
@@ -173,36 +151,450 @@ function ImpactGrid({ label }: { label: string }) {
   const [selected, setSelected] = useState<number | null>(null);
   const positions = ["FL", "F", "FR", "L", "C", "R", "BL", "B", "BR"];
   return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 12, color: "#444", marginBottom: 2 }}>{label}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 28px)", gap: 2, width: "fit-content" }}>
+    <FieldGroup label={label}>
+      <div className="grid grid-cols-3 gap-1 w-fit">
         {positions.map((pos, i) => (
-          <button key={i} onClick={() => setSelected(selected === i ? null : i)}
-            style={{
-              width: 28, height: 22, fontSize: 13, border: "1px solid #bbb", cursor: "pointer",
-              background: selected === i ? C.green : "#f0f0f0",
-              color: selected === i ? "#fff" : "#444", fontWeight: selected === i ? "bold" : "normal",
-            }}>{pos}</button>
+          <button
+            key={i}
+            onClick={() => setSelected(selected === i ? null : i)}
+            className={`w-9 h-7 text-xs font-semibold rounded border transition-colors ${
+              selected === i
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+            }`}
+          >
+            {pos}
+          </button>
         ))}
+      </div>
+    </FieldGroup>
+  );
+}
+
+function AssessmentInputPanel({
+  rowOwner, setRowOwner, foreseeable, setForeseeable,
+  rowSpeed, setRowSpeed, speedAssess, setSpeedAssess,
+  lookout1, setLookout1, lookout2, setLookout2, lookout3, setLookout3,
+  avoidance1, setAvoidance1, avoidance2, setAvoidance2, avoidance3, setAvoidance3,
+  legalCtrl, setLegalCtrl, physCtrl, setPhysCtrl,
+  insLeading, setInsLeading, clmLeading, setClmLeading,
+  onCalculate, suggestedCompleted,
+}: {
+  rowOwner: string; setRowOwner: (v: string) => void;
+  foreseeable: string; setForeseeable: (v: string) => void;
+  rowSpeed: string; setRowSpeed: (v: string) => void;
+  speedAssess: string; setSpeedAssess: (v: string) => void;
+  lookout1: string; setLookout1: (v: string) => void;
+  lookout2: string; setLookout2: (v: string) => void;
+  lookout3: string; setLookout3: (v: string) => void;
+  avoidance1: string; setAvoidance1: (v: string) => void;
+  avoidance2: string; setAvoidance2: (v: string) => void;
+  avoidance3: string; setAvoidance3: (v: string) => void;
+  legalCtrl: string; setLegalCtrl: (v: string) => void;
+  physCtrl: string; setPhysCtrl: (v: string) => void;
+  insLeading: string; setInsLeading: (v: string) => void;
+  clmLeading: string; setClmLeading: (v: string) => void;
+  onCalculate: () => void;
+  suggestedCompleted: boolean;
+}) {
+  return (
+    <div>
+      {/* AI Suggested mini-summary */}
+      <div className="bg-white border border-slate-200 rounded-lg p-3 mb-3">
+        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">AI Suggestion</div>
+        <div className="flex gap-2">
+          <div className="flex-1 text-center bg-blue-50 rounded py-2 border border-blue-100">
+            <div className="text-lg font-bold text-blue-700">0%</div>
+            <div className="text-xs text-blue-400 mt-0.5">Insured</div>
+          </div>
+          <div className="flex-1 text-center bg-amber-50 rounded py-2 border border-amber-100">
+            <div className="text-lg font-bold text-amber-700">100%</div>
+            <div className="text-xs text-amber-400 mt-0.5">Claimant</div>
+          </div>
+        </div>
+        <div className="mt-2 text-center">
+          <StatusBadge label="Left of Center" variant="slate" />
+        </div>
+      </div>
+
+      <AccordionCard title="Right of Way" icon="🚦">
+        <FieldGroup
+          label="Who Had the Right of Way?"
+          helper={rowOwner === "Claimant" ? "Last Clear Chance Valid" : undefined}
+        >
+          <StyledSelect value={rowOwner} onChange={setRowOwner} options={["Claimant", "Insured", "Unknown"]} />
+        </FieldGroup>
+        <FieldGroup label="Was the Danger Foreseeable for the ROW Driver?">
+          <StyledSelect value={foreseeable} onChange={setForeseeable} options={["Yes", "No"]} />
+        </FieldGroup>
+        <FieldGroup label="ROW Driver's Stated Speed">
+          <StyledSelect
+            value={rowSpeed}
+            onChange={setRowSpeed}
+            options={["Please Select One", "At speed limit", "Below speed limit", "Above speed limit", "Unknown"]}
+          />
+        </FieldGroup>
+      </AccordionCard>
+
+      <AccordionCard title="Speed" icon="⚡">
+        <FieldGroup
+          label="Speed Assessment"
+          helper={speedAssess === "Reduced Speed Required" ? "Reduced Speed Required" : undefined}
+        >
+          <StyledSelect
+            value={speedAssess}
+            onChange={setSpeedAssess}
+            options={["Reduced Speed Required", "Speed Not a Factor", "Speed at Issue"]}
+          />
+        </FieldGroup>
+      </AccordionCard>
+
+      <AccordionCard title="Lookout" icon="👁" defaultOpen={false}>
+        <FieldGroup label="Awareness of Actual and Potential Hazards">
+          <StyledSelect value={lookout1} onChange={setLookout1} options={["None Selected", "Aware of Hazard", "Not Aware"]} />
+        </FieldGroup>
+        <FieldGroup label="Lookout Adequacy">
+          <StyledSelect value={lookout2} onChange={setLookout2} options={["None Selected", "Adequate", "Inadequate"]} />
+        </FieldGroup>
+        <FieldGroup label="Additional Lookout Factor">
+          <StyledSelect value={lookout3} onChange={setLookout3} options={["None Selected", "Adequate", "Inadequate"]} />
+        </FieldGroup>
+      </AccordionCard>
+
+      <AccordionCard title="Avoidance" icon="🔄" defaultOpen={false}>
+        <FieldGroup label="Avoidance Reasonableness">
+          <StyledSelect value={avoidance1} onChange={setAvoidance1} options={["None Selected", "Reasonable", "Unreasonable"]} />
+        </FieldGroup>
+        <FieldGroup label="Horn Warning Required">
+          <StyledSelect value={avoidance2} onChange={setAvoidance2} options={["None Selected", "Yes", "No"]} />
+        </FieldGroup>
+        <FieldGroup label="Avoidance Adequacy">
+          <StyledSelect value={avoidance3} onChange={setAvoidance3} options={["None Selected", "Adequate", "Inadequate"]} />
+        </FieldGroup>
+      </AccordionCard>
+
+      <AccordionCard title="Impact & Control" icon="🚗" defaultOpen={false}>
+        <FieldGroup label="Legal Control of Impact Location">
+          <StyledSelect value={legalCtrl} onChange={setLegalCtrl} options={["-- Select --", "Claimant", "Insured", "Neither"]} />
+        </FieldGroup>
+        <FieldGroup label="Physical Control of Impact Location">
+          <StyledSelect value={physCtrl} onChange={setPhysCtrl} options={["-- Select --", "Claimant", "Insured", "Neither"]} />
+        </FieldGroup>
+        <FieldGroup label="Insured's Leading Edge Damaged?">
+          <StyledSelect value={insLeading} onChange={setInsLeading} options={["No", "Yes"]} />
+        </FieldGroup>
+        <FieldGroup label="Claimant's Leading Edge Damaged?">
+          <StyledSelect value={clmLeading} onChange={setClmLeading} options={["No", "Yes"]} />
+        </FieldGroup>
+        <ImpactGrid label="Impact Point — Insured Vehicle" />
+        <ImpactGrid label="Impact Point — Claimant Vehicle" />
+      </AccordionCard>
+
+      <button
+        onClick={onCalculate}
+        className={`w-full py-2.5 text-white text-sm font-semibold rounded-lg transition-colors mt-1 flex items-center justify-center gap-2 ${
+          suggestedCompleted
+            ? "bg-slate-600 hover:bg-slate-700"
+            : "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
+        }`}
+      >
+        {suggestedCompleted ? "↺ Recalculate Assessment" : "✓ Calculate Suggested Assessment"}
+      </button>
+    </div>
+  );
+}
+
+// ── Duty Breach Panel ─────────────────────────────────────────────────────────
+
+function DutyCard({
+  title, headerClass, duties, onAdd, onDelete,
+}: {
+  title: string;
+  headerClass: string;
+  duties: BreachedDuty[];
+  onAdd: () => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden mb-3">
+      <div className={`flex items-center justify-between px-4 py-2.5 ${headerClass}`}>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-700">{title}</span>
+          {duties.length > 0 && (
+            <span className="bg-white text-slate-600 text-xs font-bold px-1.5 py-0.5 rounded-full border border-slate-200 leading-none">
+              {duties.length}
+            </span>
+          )}
+        </div>
+        <button onClick={onAdd} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">
+          + Add Duty
+        </button>
+      </div>
+
+      {duties.length === 0 ? (
+        <div className="px-4 py-3 text-xs text-slate-400 italic">No duties breached in this category.</div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {duties.map(d => (
+            <div key={d.id} className="px-4 py-3 flex gap-3 group">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-slate-700 mb-0.5">{d.title}</div>
+                <div className="text-xs text-slate-500 leading-relaxed line-clamp-2">{d.duty}</div>
+              </div>
+              <button
+                onClick={() => onDelete(d.id)}
+                title="Remove duty"
+                className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all text-sm flex-shrink-0 mt-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DutyBreachPanel({
+  rowDuties, setRowDuties,
+  speedDuties, setSpeedDuties,
+  lookoutDuties, setLookoutDuties,
+  avoidanceDuties, setAvoidanceDuties,
+}: {
+  rowDuties: BreachedDuty[]; setRowDuties: React.Dispatch<React.SetStateAction<BreachedDuty[]>>;
+  speedDuties: BreachedDuty[]; setSpeedDuties: React.Dispatch<React.SetStateAction<BreachedDuty[]>>;
+  lookoutDuties: BreachedDuty[]; setLookoutDuties: React.Dispatch<React.SetStateAction<BreachedDuty[]>>;
+  avoidanceDuties: BreachedDuty[]; setAvoidanceDuties: React.Dispatch<React.SetStateAction<BreachedDuty[]>>;
+}) {
+  const addDuty = (setter: React.Dispatch<React.SetStateAction<BreachedDuty[]>>, prefix: string) => {
+    const title = prompt("Duty title:");
+    if (!title) return;
+    setter(prev => [...prev, { id: `${prefix}-${Date.now()}`, title, duty: "" }]);
+  };
+  const delDuty = (setter: React.Dispatch<React.SetStateAction<BreachedDuty[]>>, id: string) =>
+    setter(prev => prev.filter(d => d.id !== id));
+
+  return (
+    <div>
+      <DutyCard title="Right of Way Duties Breached" headerClass="bg-blue-50"
+        duties={rowDuties} onAdd={() => addDuty(setRowDuties, "row")} onDelete={id => delDuty(setRowDuties, id)} />
+      <DutyCard title="Speed Duties Breached" headerClass="bg-amber-50"
+        duties={speedDuties} onAdd={() => addDuty(setSpeedDuties, "spd")} onDelete={id => delDuty(setSpeedDuties, id)} />
+      <DutyCard title="Lookout Duties Breached" headerClass="bg-violet-50"
+        duties={lookoutDuties} onAdd={() => addDuty(setLookoutDuties, "lk")} onDelete={id => delDuty(setLookoutDuties, id)} />
+      <DutyCard title="Avoidance Duties Breached" headerClass="bg-emerald-50"
+        duties={avoidanceDuties} onAdd={() => addDuty(setAvoidanceDuties, "av")} onDelete={id => delDuty(setAvoidanceDuties, id)} />
+    </div>
+  );
+}
+
+// ── Live Assessment Panel ─────────────────────────────────────────────────────
+
+function LiveAssessmentPanel({
+  insActual, setInsActual,
+  insLow, setInsLow,
+  clmActual, setClmActual,
+  insHigh, setInsHigh,
+  clmHigh, setClmHigh,
+  clmLow, setClmLow,
+  deny, setDeny,
+  onSave,
+}: {
+  insActual: string; setInsActual: (v: string) => void;
+  insLow: string; setInsLow: (v: string) => void;
+  clmActual: string; setClmActual: (v: string) => void;
+  insHigh: string; setInsHigh: (v: string) => void;
+  clmHigh: string; setClmHigh: (v: string) => void;
+  clmLow: string; setClmLow: (v: string) => void;
+  deny: string; setDeny: (v: string) => void;
+  onSave: () => void;
+}) {
+  const parseNum = (v: string) => parseInt(v.replace(/[^0-9]/g, "")) || 0;
+  const ins = parseNum(insActual);
+  const clm = parseNum(clmActual);
+  const total = ins + clm || 100;
+  const insPct = Math.round((ins / total) * 100);
+  const clmPct = 100 - insPct;
+
+  const fields: { label: string; value: string; set: (v: string) => void }[] = [
+    { label: "Insured Actual",  value: insActual, set: setInsActual },
+    { label: "Insured Low",     value: insLow,    set: setInsLow    },
+    { label: "Claimant Actual", value: clmActual, set: setClmActual },
+    { label: "Insured High",    value: insHigh,   set: setInsHigh   },
+    { label: "Claimant Low",    value: clmLow,    set: setClmLow    },
+    { label: "Claimant High",   value: clmHigh,   set: setClmHigh   },
+  ];
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      {/* Panel header */}
+      <div className="px-4 py-3 bg-slate-800 text-white">
+        <div className="text-sm font-semibold">Assessment Decision</div>
+        <div className="text-xs text-slate-400 mt-0.5">Set final negligence distribution</div>
+      </div>
+
+      {/* Visual negligence bar */}
+      <div className="px-4 py-3 border-b border-slate-100">
+        <div className="flex rounded-full overflow-hidden h-2.5 bg-slate-100 mb-2">
+          <div style={{ width: `${insPct}%` }} className="bg-blue-500 transition-all duration-300" />
+          <div style={{ width: `${clmPct}%` }} className="bg-amber-400 transition-all duration-300" />
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="font-semibold text-blue-600">Insured {ins}%</span>
+          <span className="font-semibold text-amber-600">Claimant {clm}%</span>
+        </div>
+      </div>
+
+      {/* State law notice */}
+      <div className="px-4 py-3 border-b border-slate-100">
+        <div className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 rounded-md p-2 leading-snug text-center">
+          Alabama: Contributory — Any Negligence Eliminates Recovery
+        </div>
+      </div>
+
+      {/* Negligence inputs */}
+      <div className="px-4 py-3 border-b border-slate-100">
+        <div className="grid grid-cols-2 gap-2">
+          {fields.map(({ label, value, set }) => (
+            <div key={label}>
+              <label className="block text-xs text-slate-500 mb-1 leading-tight">{label}</label>
+              <input
+                value={value}
+                onChange={e => set(e.target.value)}
+                className="w-full text-sm font-semibold text-center border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="px-4 py-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-slate-600">Deny Claimant?</label>
+          <select
+            value={deny}
+            onChange={e => setDeny(e.target.value)}
+            className="text-sm border border-slate-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option>No</option>
+            <option>Yes</option>
+          </select>
+        </div>
+        <button
+          onClick={onSave}
+          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          Save Changes
+        </button>
+        <button className="w-full py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-medium rounded-lg transition-colors">
+          Save as Draft
+        </button>
+        <div className="pt-1 border-t border-slate-100 space-y-1">
+          <a href="#" onClick={e => e.preventDefault()}
+            className="block text-xs text-blue-600 hover:text-blue-800 hover:underline text-center">
+            Assign assessment to me
+          </a>
+          <a href="#" onClick={e => e.preventDefault()}
+            className="block text-xs text-blue-600 hover:text-blue-800 hover:underline text-center">
+            Reassign to another rep
+          </a>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Document cell (used inside the table) ───────────────────────────────────
-function DocCell({
-  party, uploadedDocs, onUpload, onAttach, onDetach,
+// ── Locked Decision Panel placeholder ────────────────────────────────────────
+
+function LockedDecisionPanel({ onScrollToInputs }: { onScrollToInputs: () => void }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      {/* Header — matches LiveAssessmentPanel style so it doesn't feel abrupt */}
+      <div className="px-4 py-3 bg-slate-800 text-white">
+        <div className="text-sm font-semibold">Assessment Decision</div>
+        <div className="text-xs text-slate-400 mt-0.5">Actual negligence distribution</div>
+      </div>
+
+      {/* Lock body */}
+      <div className="px-5 py-8 flex flex-col items-center text-center gap-4">
+        {/* Lock icon */}
+        <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center text-2xl">
+          🔒
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold text-slate-700 mb-1">
+            Complete Suggested Assessment First
+          </div>
+          <div className="text-xs text-slate-500 leading-relaxed">
+            Fill in the assessment inputs on the left and click{" "}
+            <span className="font-semibold text-slate-700">
+              &ldquo;Calculate Suggested Assessment&rdquo;
+            </span>{" "}
+            to unlock the Actual Assessment decision panel.
+          </div>
+        </div>
+
+        {/* Step indicators */}
+        <div className="w-full space-y-2 mt-1">
+          {[
+            { step: "1", label: "Set Right of Way, Speed, Lookout & Avoidance inputs", done: false },
+            { step: "2", label: "Click \"Calculate Suggested Assessment\"",             done: false },
+            { step: "3", label: "Review and set Actual Assessment here",               done: false },
+          ].map(({ step, label, done }) => (
+            <div key={step} className="flex items-start gap-2.5 text-left">
+              <div className={`flex-shrink-0 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center mt-0.5 ${
+                done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
+              }`}>
+                {done ? "✓" : step}
+              </div>
+              <span className={`text-xs leading-snug ${done ? "text-emerald-700 line-through" : "text-slate-500"}`}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={onScrollToInputs}
+          className="mt-2 w-full py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition-colors"
+        >
+          Go to Assessment Inputs ↑
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Evidence Section ──────────────────────────────────────────────────────────
+
+function DocumentChip({ doc, onDetach }: { doc: UploadedDoc; onDetach: () => void }) {
+  return (
+    <div className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-xs text-blue-700 max-w-full">
+      <span className="truncate" style={{ maxWidth: 120 }}>{doc.name}</span>
+      <button onClick={onDetach} className="text-blue-400 hover:text-red-500 transition-colors flex-shrink-0 leading-none">×</button>
+    </div>
+  );
+}
+
+function PartyEvidenceCard({
+  party, uploadedDocs, onUpload,
+  onPartyAgree, onPartySummary, onPartyAttach, onPartyDetach,
 }: {
   party: PartyEvidence;
   uploadedDocs: UploadedDoc[];
   onUpload: (doc: UploadedDoc) => void;
-  onAttach: (id: string) => void;
-  onDetach: (id: string) => void;
+  onPartyAgree:   (key: string, val: "agree" | "disagree" | "") => void;
+  onPartySummary: (key: string, val: string) => void;
+  onPartyAttach:  (key: string, docId: string) => void;
+  onPartyDetach:  (key: string, docId: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [showPicker, setShowPicker] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     Array.from(files).forEach(f => {
@@ -213,289 +605,351 @@ function DocCell({
         uploadedAt: new Date().toLocaleDateString(),
       };
       onUpload(doc);
-      onAttach(doc.id);
+      onPartyAttach(party.partyKey, doc.id);
     });
     e.target.value = "";
   };
 
   const attached   = uploadedDocs.filter(d => party.attachedDocIds.includes(d.id));
   const unattached = uploadedDocs.filter(d => !party.attachedDocIds.includes(d.id));
+  const isAgree    = party.agree === "agree";
+  const isDisagree = party.agree === "disagree";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" as const, gap: 4 }}>
-      {/* Attached doc list */}
-      {attached.map(doc => (
-        <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 4, background: "#f0f4f0", border: "1px solid #b8d8b8", borderRadius: 2, padding: "2px 6px" }}>
-          <span style={{ fontSize: 13 }}>📄</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
+    <div className={`bg-white border rounded-lg overflow-hidden ${isAgree ? "border-emerald-300" : isDisagree ? "border-red-300" : "border-slate-200"}`}>
+      {/* Card header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm text-slate-800">{party.partyName}</span>
+            {party.isInsured && <StatusBadge label="Insured" variant="blue" />}
+            {isAgree    && <StatusBadge label="Agreed"    variant="green" />}
+            {isDisagree && <StatusBadge label="Disagreed" variant="amber" />}
           </div>
-          <button onClick={() => onDetach(doc.id)} style={{ fontSize: 10, padding: "0px 5px", background: "#fff0f0", border: "1px solid #e0a0a0", borderRadius: 2, cursor: "pointer", color: "#c00" }}>✕</button>
+          <div className="text-xs text-slate-500 mt-0.5">{party.partyType}</div>
         </div>
-      ))}
-
-      {/* Action buttons */}
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as const }}>
-        <button onClick={() => fileRef.current?.click()}
-          style={{ fontSize: 11, padding: "2px 8px", background: C.navy, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
-          ⬆ Upload
-        </button>
-        <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} />
-
-        <div style={{ position: "relative" as const }}>
-          <button onClick={() => setShowPicker(v => !v)}
-            style={{ fontSize: 11, padding: "2px 8px", background: C.blue, color: "#fff", border: "none", borderRadius: 2, cursor: "pointer", fontWeight: "bold" }}>
-            📎 Claim Docs{unattached.length > 0 ? ` (${unattached.length})` : ""}
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={() => onPartyAgree(party.partyKey, isAgree ? "" : "agree")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+              isAgree
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-white text-slate-600 border-slate-200 hover:border-emerald-400 hover:text-emerald-700"
+            }`}
+          >
+            ✓ Agree
           </button>
-          {showPicker && (
-            <div style={{ position: "absolute" as const, top: "110%", left: 0, zIndex: 300, background: "#fff", border: "1px solid #aaa", borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.18)", minWidth: 260, padding: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 4, borderBottom: "1px solid #eee", paddingBottom: 3 }}>
-                {unattached.length === 0 ? "No more claim documents available." : "Select a claim document:"}
-              </div>
-              {unattached.map(doc => (
-                <div key={doc.id} onClick={() => { onAttach(doc.id); setShowPicker(false); }}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", cursor: "pointer", borderRadius: 2, marginBottom: 2 }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#e8f0e8")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  <span style={{ fontSize: 14 }}>📄</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{doc.name}</div>
-                    <div style={{ fontSize: 11, color: "#888" }}>{doc.size} · {doc.uploadedAt}</div>
+          <button
+            onClick={() => onPartyAgree(party.partyKey, isDisagree ? "" : "disagree")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+              isDisagree
+                ? "bg-red-600 text-white border-red-600"
+                : "bg-white text-slate-600 border-slate-200 hover:border-red-400 hover:text-red-700"
+            }`}
+          >
+            ✗ Disagree
+          </button>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="px-4 py-3 grid grid-cols-2 gap-4">
+        <div>
+          <div className="text-xs font-medium text-slate-500 mb-1.5">Summary / Key Facts</div>
+          <textarea
+            rows={3}
+            value={party.summary}
+            onChange={e => onPartySummary(party.partyKey, e.target.value)}
+            placeholder="Enter key facts and observations for this party…"
+            className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-slate-500 mb-1.5">Linked Documents</div>
+          <div className="flex flex-wrap gap-1 min-h-8 mb-2">
+            {attached.length === 0 && <span className="text-xs text-slate-300 italic">No documents linked yet</span>}
+            {attached.map(doc => (
+              <DocumentChip key={doc.id} doc={doc} onDetach={() => onPartyDetach(party.partyKey, doc.id)} />
+            ))}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md transition-colors font-medium"
+            >
+              ↑ Upload
+            </button>
+            <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFile} />
+            <div className="relative">
+              <button
+                onClick={() => setShowPicker(v => !v)}
+                className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+              >
+                📎 Claim Docs{unattached.length > 0 ? ` (${unattached.length})` : ""}
+              </button>
+              {showPicker && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl w-72 p-3">
+                  <div className="text-xs font-semibold text-slate-600 mb-2 pb-2 border-b border-slate-100">
+                    {unattached.length === 0 ? "No more documents available" : "Select a claim document"}
                   </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {unattached.map(doc => (
+                      <div
+                        key={doc.id}
+                        onClick={() => { onPartyAttach(party.partyKey, doc.id); setShowPicker(false); }}
+                        className="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="text-base flex-shrink-0">📄</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-slate-700 truncate font-medium">{doc.name}</div>
+                          <div className="text-xs text-slate-400">{doc.size} · {doc.uploadedAt}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowPicker(false)}
+                    className="mt-2 w-full text-xs py-1.5 border border-slate-200 rounded text-slate-500 hover:bg-slate-50 transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
-              ))}
-              <button onClick={() => setShowPicker(false)} style={{ fontSize: 11, padding: "2px 8px", marginTop: 4, background: "#eee", border: "1px solid #ccc", cursor: "pointer", width: "100%" }}>Close</button>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Parties Table ────────────────────────────────────────────────────────────
-function PartiesTable({
-  parties, uploadedDocs, onUpload,
-  onPartyAgree, onPartySummary, onPartyAttach, onPartyDetach,
-}: {
-  parties: PartyEvidence[];
-  uploadedDocs: UploadedDoc[];
-  onUpload: (doc: UploadedDoc) => void;
+type EvidenceTab = "row" | "speed" | "lookout" | "avoidance" | "summary";
+
+interface DutyHandlers {
+  onNoteChange:   (v: string) => void;
   onPartyAgree:   (key: string, val: "agree" | "disagree" | "") => void;
   onPartySummary: (key: string, val: string) => void;
   onPartyAttach:  (key: string, docId: string) => void;
   onPartyDetach:  (key: string, docId: string) => void;
+}
+
+function EvidenceSection({
+  rowDuty, spdDuty, lkDuty, avDuty,
+  uploadedDocs, onUpload,
+  rowH, spdH, lkH, avH,
+  overallSummary, setOverallSummary,
+}: {
+  rowDuty: DutyData; spdDuty: DutyData; lkDuty: DutyData; avDuty: DutyData;
+  uploadedDocs: UploadedDoc[];
+  onUpload: (doc: UploadedDoc) => void;
+  rowH: DutyHandlers; spdH: DutyHandlers; lkH: DutyHandlers; avH: DutyHandlers;
+  overallSummary: string;
+  setOverallSummary: (v: string) => void;
 }) {
-  const thStyle: React.CSSProperties = {
-    padding: "6px 10px", fontSize: 13, fontWeight: "bold", textAlign: "left",
-    background: "#d8d8d0", color: "#222", borderRight: "1px solid #bbb",
-    borderBottom: "2px solid #aaa", whiteSpace: "nowrap" as const,
+  const [activeTab, setActiveTab] = useState<EvidenceTab>("row");
+
+  const tabs: { key: EvidenceTab; label: string; activeClass: string }[] = [
+    { key: "row",       label: "Right of Way", activeClass: "border-blue-500 text-blue-600 bg-white"       },
+    { key: "speed",     label: "Speed",         activeClass: "border-amber-500 text-amber-600 bg-white"    },
+    { key: "lookout",   label: "Lookout",       activeClass: "border-violet-500 text-violet-600 bg-white"  },
+    { key: "avoidance", label: "Avoidance",     activeClass: "border-emerald-500 text-emerald-600 bg-white"},
+    { key: "summary",   label: "Overall Summary", activeClass: "border-slate-500 text-slate-700 bg-white"  },
+  ];
+
+  const subtitleMap: Record<EvidenceTab, string> = {
+    row:       "What evidence proves Right of Way duty breach?",
+    speed:     "What evidence proves Speed duty breach?",
+    lookout:   "What evidence proves Lookout duty breach by the ROW driver?",
+    avoidance: "What evidence proves Avoidance duty breach by the ROW driver?",
+    summary:   "Consolidated summary across all duty breach categories",
   };
-  const tdStyle = (alt: boolean, noWrap = false): React.CSSProperties => ({
-    padding: "8px 10px", fontSize: 13, verticalAlign: "middle",
-    borderRight: "1px solid #ccc", borderBottom: "1px solid #ccc",
-    background: alt ? "#e8e8e0" : "#f8f8f4",
-    whiteSpace: noWrap ? "nowrap" as const : "normal" as const,
-  });
+
+  const dutyMap:    Record<Exclude<EvidenceTab, "summary">, DutyData>    = { row: rowDuty, speed: spdDuty, lookout: lkDuty, avoidance: avDuty };
+  const handlerMap: Record<Exclude<EvidenceTab, "summary">, DutyHandlers> = { row: rowH,    speed: spdH,    lookout: lkH,    avoidance: avH    };
+
+  const currentDuty    = activeTab !== "summary" ? dutyMap[activeTab]    : null;
+  const currentHandler = activeTab !== "summary" ? handlerMap[activeTab] : null;
 
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #bbb" }}>
-      <thead>
-        <tr>
-          <th style={{ ...thStyle, width: 150 }}>Party Name</th>
-          <th style={{ ...thStyle, width: 240 }}>Party Type</th>
-          <th style={thStyle}>Summary</th>
-          <th style={{ ...thStyle, width: 200 }}>Documents</th>
-          <th style={{ ...thStyle, width: 160, borderRight: "none" }}>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {parties.map((party, idx) => {
-          const alt = idx % 2 === 1;
-          const isAgree    = party.agree === "agree";
-          const isDisagree = party.agree === "disagree";
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden mt-4">
+      <div className="px-6 py-4 border-b border-slate-100">
+        <h2 className="text-base font-semibold text-slate-800">Evidence of Duty Breaches</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Review and annotate party-level evidence for each duty category</p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex border-b border-slate-100 bg-slate-50 overflow-x-auto">
+        {tabs.map(tab => {
+          const active = activeTab === tab.key;
           return (
-            <tr key={party.partyKey}>
-              {/* Name */}
-              <td style={tdStyle(alt)}>
-                <a href="#" onClick={e => e.preventDefault()}
-                  style={{ color: C.blue, fontWeight: "bold", fontSize: 13, textDecoration: "none" }}
-                  onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
-                  {party.partyName}{party.isInsured ? "*" : ""}
-                </a>
-              </td>
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                active ? tab.activeClass : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-              {/* Party type */}
-              <td style={tdStyle(alt, true)}>
-                <span style={{ fontSize: 13, color: "#222" }}>{party.partyType}</span>
-              </td>
-
-              {/* Summary */}
-              <td style={tdStyle(alt)}>
-                <textarea
-                  rows={2} value={party.summary}
-                  onChange={e => onPartySummary(party.partyKey, e.target.value)}
-                  placeholder="Enter summary…"
-                  style={{ ...textareaStyle, minWidth: 140 }}
-                />
-              </td>
-
-              {/* Documents */}
-              <td style={tdStyle(alt)}>
-                <DocCell
+      <div className="px-6 py-5">
+        {activeTab !== "summary" && currentDuty && currentHandler ? (
+          <>
+            <p className="text-xs text-slate-400 italic mb-4">{subtitleMap[activeTab]}</p>
+            <div className="space-y-3">
+              {currentDuty.parties.map(party => (
+                <PartyEvidenceCard
+                  key={party.partyKey}
                   party={party}
                   uploadedDocs={uploadedDocs}
                   onUpload={onUpload}
-                  onAttach={id => onPartyAttach(party.partyKey, id)}
-                  onDetach={id => onPartyDetach(party.partyKey, id)}
+                  onPartyAgree={currentHandler.onPartyAgree}
+                  onPartySummary={currentHandler.onPartySummary}
+                  onPartyAttach={currentHandler.onPartyAttach}
+                  onPartyDetach={currentHandler.onPartyDetach}
                 />
-              </td>
-
-              {/* Action — Agree / Disagree */}
-              <td style={{ ...tdStyle(alt, true), borderRight: "none" }}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button
-                    onClick={() => onPartyAgree(party.partyKey, isAgree ? "" : "agree")}
-                    style={{
-                      padding: "4px 12px", fontSize: 12, fontWeight: "bold", cursor: "pointer", borderRadius: 2,
-                      border: `1px solid ${isAgree ? C.green : "#bbb"}`,
-                      background: isAgree ? C.green : "#f0f0f0",
-                      color: isAgree ? "#fff" : "#444",
-                    }}>✓ Agree</button>
-                  <button
-                    onClick={() => onPartyAgree(party.partyKey, isDisagree ? "" : "disagree")}
-                    style={{
-                      padding: "4px 12px", fontSize: 12, fontWeight: "bold", cursor: "pointer", borderRadius: 2,
-                      border: `1px solid ${isDisagree ? "#c00" : "#bbb"}`,
-                      background: isDisagree ? "#c00" : "#f0f0f0",
-                      color: isDisagree ? "#fff" : "#444",
-                    }}>✗ Disagree</button>
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
-// ─── Duty Section Panel ───────────────────────────────────────────────────────
-function DutySectionPanel({
-  title, subtitle, locationLabel,
-  data, onNoteChange, onLocationChange, onPartyAgree, onPartySummary, onPartyAttach, onPartyDetach,
-  uploadedDocs, onUpload,
-}: {
-  title: string;
-  subtitle: string;
-  locationLabel?: string;
-  data: DutyData;
-  onNoteChange: (v: string) => void;
-  onLocationChange: (v: string) => void;
-  onPartyAgree:   (key: string, val: "agree" | "disagree" | "") => void;
-  onPartySummary: (key: string, val: string) => void;
-  onPartyAttach:  (key: string, docId: string) => void;
-  onPartyDetach:  (key: string, docId: string) => void;
-  uploadedDocs: UploadedDoc[];
-  onUpload: (doc: UploadedDoc) => void;
-}) {
-  return (
-    <div style={{ padding: "12px 14px", background: "#fff" }}>
-      {/* Parties table */}
-      <div style={{ marginBottom: 12 }}>
-        <PartiesTable
-          parties={data.parties}
-          uploadedDocs={uploadedDocs}
-          onUpload={onUpload}
-          onPartyAgree={onPartyAgree}
-          onPartySummary={onPartySummary}
-          onPartyAttach={onPartyAttach}
-          onPartyDetach={onPartyDetach}
-        />
-      </div>
-
-      {/* Overall notes for this duty */}
-      <div>
-        <div style={{ fontSize: 12, fontWeight: "bold", color: "#555", marginBottom: 3 }}>Notes for {locationLabel ?? title}</div>
-        <textarea
-          rows={3} value={data.note}
-          onChange={e => onNoteChange(e.target.value)}
-          placeholder={`Key facts and notes about ${title}…`}
-          style={textareaStyle}
-        />
+              ))}
+            </div>
+            <div className="mt-4">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Section Notes — {tabs.find(t => t.key === activeTab)?.label}
+              </label>
+              <textarea
+                rows={3}
+                value={currentDuty.note}
+                onChange={e => currentHandler.onNoteChange(e.target.value)}
+                placeholder={`Key observations for ${tabs.find(t => t.key === activeTab)?.label} duties…`}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          </>
+        ) : (
+          <div>
+            <p className="text-xs text-slate-400 italic mb-4">{subtitleMap.summary}</p>
+            <textarea
+              rows={12}
+              value={overallSummary}
+              onChange={e => setOverallSummary(e.target.value)}
+              placeholder="Enter a consolidated summary of all duty breaches and supporting evidence…"
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+              style={{ minHeight: 220 }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-export default function LiabilityAssessmentPage() {
-  // Suggested Assessment dropdowns
-  const [rowOwner,   setRowOwner]   = useState("Claimant");
-  const [foreseeable, setForeseeable] = useState("Yes");
-  const [rowSpeed,   setRowSpeed]   = useState("Please Select One");
-  const [speedAssess, setSpeedAssess] = useState("Reduced Speed Required");
-  const [lookout1,   setLookout1]   = useState("None Selected");
-  const [lookout2,   setLookout2]   = useState("None Selected");
-  const [lookout3,   setLookout3]   = useState("None Selected");
-  const [avoidance1, setAvoidance1] = useState("None Selected");
-  const [avoidance2, setAvoidance2] = useState("None Selected");
-  const [avoidance3, setAvoidance3] = useState("None Selected");
-  const [legalCtrl,  setLegalCtrl]  = useState("");
-  const [physCtrl,   setPhysCtrl]   = useState("");
-  const [insLeading, setInsLeading] = useState("No");
-  const [clmLeading, setClmLeading] = useState("No");
+// ── Page Header ───────────────────────────────────────────────────────────────
 
-  // Actual Assessment inputs
+function AssessmentPageHeader({ totalDuties, docCount, suggestedCompleted }: {
+  totalDuties: number;
+  docCount: number;
+  suggestedCompleted: boolean;
+}) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg px-6 py-4 mb-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">CLM-2026-0847</h1>
+            <StatusBadge label={suggestedCompleted ? "Assessment Active" : "Suggested Pending"} variant={suggestedCompleted ? "green" : "amber"} />
+            <StatusBadge label="Left of Center" variant="slate" />
+          </div>
+          <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
+            <span><span className="font-semibold text-slate-700">Insured:</span> Insured-Street-View</span>
+            <span className="text-slate-300">·</span>
+            <span><span className="font-semibold text-slate-700">Date of Loss:</span> Feb 25, 2026</span>
+            <span className="text-slate-300">·</span>
+            <span><span className="font-semibold text-slate-700">State:</span> Alabama</span>
+            <span className="text-slate-300">·</span>
+            <span><span className="font-semibold text-slate-700">Assigned:</span> Khizar Imtiaz</span>
+          </div>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <div className="text-center px-4 py-2 bg-blue-50 border border-blue-100 rounded-lg min-w-16">
+            <div className="text-lg font-bold text-blue-700 leading-tight">0%</div>
+            <div className="text-xs text-blue-400 mt-0.5">Insured Neg.</div>
+          </div>
+          <div className="text-center px-4 py-2 bg-amber-50 border border-amber-100 rounded-lg min-w-16">
+            <div className="text-lg font-bold text-amber-700 leading-tight">100%</div>
+            <div className="text-xs text-amber-400 mt-0.5">Claimant Neg.</div>
+          </div>
+          <div className="text-center px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg min-w-16">
+            <div className="text-lg font-bold text-slate-700 leading-tight">{totalDuties}</div>
+            <div className="text-xs text-slate-500 mt-0.5">Duties Breached</div>
+          </div>
+          <div className="text-center px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg min-w-16">
+            <div className="text-lg font-bold text-slate-700 leading-tight">{docCount}</div>
+            <div className="text-xs text-slate-500 mt-0.5">Evidence Docs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Root Export ───────────────────────────────────────────────────────────────
+
+export default function LiabilityAssessmentPage() {
+  // Assessment input state
+  const [rowOwner,    setRowOwner]    = useState("Claimant");
+  const [foreseeable, setForeseeable] = useState("Yes");
+  const [rowSpeed,    setRowSpeed]    = useState("Please Select One");
+  const [speedAssess, setSpeedAssess] = useState("Reduced Speed Required");
+  const [lookout1,    setLookout1]    = useState("None Selected");
+  const [lookout2,    setLookout2]    = useState("None Selected");
+  const [lookout3,    setLookout3]    = useState("None Selected");
+  const [avoidance1,  setAvoidance1]  = useState("None Selected");
+  const [avoidance2,  setAvoidance2]  = useState("None Selected");
+  const [avoidance3,  setAvoidance3]  = useState("None Selected");
+  const [legalCtrl,   setLegalCtrl]   = useState("-- Select --");
+  const [physCtrl,    setPhysCtrl]    = useState("-- Select --");
+  const [insLeading,  setInsLeading]  = useState("No");
+  const [clmLeading,  setClmLeading]  = useState("No");
+
+  // Gate: actual assessment is only shown after suggested assessment is calculated
+  const [suggestedCompleted, setSuggestedCompleted] = useState(false);
+
+  // Actual assessment state
   const [insActual, setInsActual] = useState("0%");
   const [insLow,    setInsLow]    = useState("0%");
-  const [clmActual, setClmActual] = useState("0%");
+  const [clmActual, setClmActual] = useState("100%");
   const [insHigh,   setInsHigh]   = useState("0%");
-  const [clmHigh,   setClmHigh]   = useState("0%");
-  const [clmLow,    setClmLow]    = useState("0%");
+  const [clmHigh,   setClmHigh]   = useState("100%");
+  const [clmLow,    setClmLow]    = useState("100%");
   const [deny,      setDeny]      = useState("No");
 
-  // Evidence of Duty Breaches — per-duty data
+  // Breached duties
+  const [rowDuties,       setRowDuties]       = useState<BreachedDuty[]>(INITIAL_ROW_DUTIES);
+  const [speedDuties,     setSpeedDuties]     = useState<BreachedDuty[]>([]);
+  const [lookoutDuties,   setLookoutDuties]   = useState<BreachedDuty[]>(INITIAL_LOOKOUT_DUTIES);
+  const [avoidanceDuties, setAvoidanceDuties] = useState<BreachedDuty[]>(INITIAL_AVOIDANCE_DUTIES);
+
+  // Evidence state
   const [rowDuty, setRowDuty] = useState<DutyData>(makeDutyData);
   const [spdDuty, setSpdDuty] = useState<DutyData>(makeDutyData);
   const [lkDuty,  setLkDuty]  = useState<DutyData>(makeDutyData);
   const [avDuty,  setAvDuty]  = useState<DutyData>(makeDutyData);
-
-  // Overall summary for Evidence tab
   const [overallSummary, setOverallSummary] = useState("");
+  const [uploadedDocs, setUploadedDocs]     = useState<UploadedDoc[]>(MOCK_DOCS);
 
-  // Evidence tab
-  const [evidTab, setEvidTab] = useState<"evidence" | "summary">("evidence");
+  const inputPanelRef = useRef<HTMLDivElement>(null);
 
-  // Shared uploaded docs pool
-  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>(MOCK_DOCS);
   const addDoc = (doc: UploadedDoc) =>
     setUploadedDocs(prev => prev.some(d => d.id === doc.id) ? prev : [...prev, doc]);
 
-  // Helpers to update duty data immutably
-  const updateDuty = (
-    setter: React.Dispatch<React.SetStateAction<DutyData>>,
-    updater: (prev: DutyData) => DutyData
-  ) => setter(updater);
-
-  const makeHandlers = (setter: React.Dispatch<React.SetStateAction<DutyData>>) => ({
-    onNoteChange:     (v: string) => updateDuty(setter, d => ({ ...d, note: v })),
-    onLocationChange: (v: string) => updateDuty(setter, d => ({ ...d, locationNote: v })),
-    onPartyAgree:     (key: string, val: "agree" | "disagree" | "") => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, agree: val } : p),
-    })),
-    onPartySummary:   (key: string, val: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, summary: val } : p),
-    })),
-    onPartyAttach:    (key: string, id: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyKey === key && !p.attachedDocIds.includes(id)
-        ? { ...p, attachedDocIds: [...p.attachedDocIds, id] } : p),
-    })),
-    onPartyDetach:    (key: string, id: string) => updateDuty(setter, d => ({
-      ...d, parties: d.parties.map(p => p.partyKey === key
-        ? { ...p, attachedDocIds: p.attachedDocIds.filter(x => x !== id) } : p),
-    })),
+  const makeHandlers = (setter: React.Dispatch<React.SetStateAction<DutyData>>): DutyHandlers => ({
+    onNoteChange:   (v) => setter(d => ({ ...d, note: v })),
+    onPartyAgree:   (key, val) => setter(d => ({ ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, agree: val } : p) })),
+    onPartySummary: (key, val) => setter(d => ({ ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, summary: val } : p) })),
+    onPartyAttach:  (key, id)  => setter(d => ({ ...d, parties: d.parties.map(p => p.partyKey === key && !p.attachedDocIds.includes(id) ? { ...p, attachedDocIds: [...p.attachedDocIds, id] } : p) })),
+    onPartyDetach:  (key, id)  => setter(d => ({ ...d, parties: d.parties.map(p => p.partyKey === key ? { ...p, attachedDocIds: p.attachedDocIds.filter(x => x !== id) } : p) })),
   });
 
   const rowH = makeHandlers(setRowDuty);
@@ -503,279 +957,95 @@ export default function LiabilityAssessmentPage() {
   const lkH  = makeHandlers(setLkDuty);
   const avH  = makeHandlers(setAvDuty);
 
-  const calc = () => alert("Calculate Suggested & Update Duties (prototype)");
-  const save = () => alert("Saved! (prototype)");
+  const handleCalculate = () => {
+    setSuggestedCompleted(true);
+    // Real implementation: POST to /api/claims/{id}/assessment/calculate
+  };
 
-  const evidTabBtn = (tab: "evidence" | "summary"): React.CSSProperties => ({
-    padding: "7px 20px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: "bold",
-    background: evidTab === tab ? C.navy : "#e8e8e8",
-    color: evidTab === tab ? "#fff" : "#333",
-    borderRight: "1px solid #aaa",
-  });
+  const scrollToInputs = () => {
+    inputPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const totalDuties = rowDuties.length + speedDuties.length + lookoutDuties.length + avoidanceDuties.length;
 
   return (
-    <div style={{ fontFamily: "Arial,sans-serif", fontSize: 14, color: "#222", background: "#fff", display: "flex", flexDirection: "column", gap: 6 }}>
+    <div className="min-h-full p-4" style={{ background: "#f0f2f5" }}>
+      <AssessmentPageHeader
+        totalDuties={totalDuties}
+        docCount={uploadedDocs.length}
+        suggestedCompleted={suggestedCompleted}
+      />
 
-      {/* ── Claim info bar ───────────────────────────────────────────── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, background: C.headerBg, border: C.border, padding: "4px 10px", fontSize: 13 }}>
-        <span><strong>Claim Number:</strong> Kh2000-Street-View-Test</span>
-        <span><strong>Insured Name</strong> Insured-Street-View-</span>
-        <span><strong>Date of Loss:</strong> 2/25/2026</span>
-        <span><strong>State</strong> Alabama</span>
-      </div>
+      {/* 3-column workspace */}
+      <div className="flex gap-4 items-start">
 
-      {/* ── Top 3-column layout ──────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
-
-        {/* COL 1 — Suggested Assessment dropdowns */}
-        <div style={{ width: 420, flexShrink: 0, border: C.border, background: "#fff" }}>
-          <div style={colHeaderStyle()}>Suggested Assessment</div>
-
-          <div style={{ display: "flex", borderBottom: C.borderLight }}>
-            {[["0%","Insured Suggested Neg"],["100%","Claimant Suggested Neg"],["Left of Center","Accident Type"]].map(([v,l]) => (
-              <div key={l} style={{ flex: 1, padding: "4px 4px", textAlign: "center", borderRight: C.borderLight, background: "#f8f9fb" }}>
-                <div style={{ fontWeight: "bold", fontSize: 14, color: C.navy }}>{v}</div>
-                <div style={{ fontSize: 13, color: "#666", lineHeight: 1.2 }}>{l}</div>
-              </div>
-            ))}
+        {/* Left column — Assessment Inputs */}
+        <div ref={inputPanelRef} className="flex-shrink-0" style={{ width: 276 }}>
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-0.5">
+            Assessment Inputs
           </div>
-
-          <div style={{ padding: "6px 6px" }}>
-            <button style={greenBtn} onClick={calc}>Calculate Suggested &amp; Update Duties</button>
-          </div>
-
-          <div style={{ padding: "4px 6px", borderTop: C.borderLight }}>
-            <FieldRow label="Who Had the Right of Way?">
-              <select style={selectStyle} value={rowOwner} onChange={e => setRowOwner(e.target.value)}>
-                {["Claimant","Insured","Unknown"].map(o => <option key={o}>{o}</option>)}
-              </select>
-              <FlagText>Last Clear Chance Valid</FlagText>
-            </FieldRow>
-            <FieldRow label="Was the Danger Foreseeable for the Driver With the Right of Way?">
-              <select style={selectStyle} value={foreseeable} onChange={e => setForeseeable(e.target.value)}>
-                {["Yes","No"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="ROW Driver's Stated Speed">
-              <select style={selectStyle} value={rowSpeed} onChange={e => setRowSpeed(e.target.value)}>
-                {["Please Select One","At speed limit","Below speed limit","Above speed limit","Unknown"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Speed Assessment">
-              <select style={selectStyle} value={speedAssess} onChange={e => setSpeedAssess(e.target.value)}>
-                {["Reduced Speed Required","Speed Not a Factor","Speed at Issue"].map(o => <option key={o}>{o}</option>)}
-              </select>
-              <FlagText color="#886000">Reduced Speed Required</FlagText>
-            </FieldRow>
-            <FieldRow label="Lookout Assessment  Look Out Type: Aware of Actual and Potential Hazards">
-              <select style={selectStyle} value={lookout1} onChange={e => setLookout1(e.target.value)}>
-                {["None Selected","Aware of Hazard","Not Aware"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Lookout Assessment">
-              <select style={selectStyle} value={lookout2} onChange={e => setLookout2(e.target.value)}>
-                {["None Selected","Adequate","Inadequate"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Lookout Assessment">
-              <select style={selectStyle} value={lookout3} onChange={e => setLookout3(e.target.value)}>
-                {["None Selected","Adequate","Inadequate"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Avoidance Assessment  Avoidance Type: Reasonable">
-              <select style={selectStyle} value={avoidance1} onChange={e => setAvoidance1(e.target.value)}>
-                {["None Selected","Reasonable","Unreasonable"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Avoidance Assessment  Horn Required To Warn">
-              <select style={selectStyle} value={avoidance2} onChange={e => setAvoidance2(e.target.value)}>
-                {["None Selected","Yes","No"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Avoidance Assessment">
-              <select style={selectStyle} value={avoidance3} onChange={e => setAvoidance3(e.target.value)}>
-                {["None Selected","Adequate","Inadequate"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Who Had Legal Control of the Location of Impact?">
-              <select style={selectStyle} value={legalCtrl} onChange={e => setLegalCtrl(e.target.value)}>
-                {["","Claimant","Insured","Neither"].map(o => <option key={o} value={o}>{o || "-- Select --"}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Who Had Physical Control of the Location of Impact?">
-              <select style={selectStyle} value={physCtrl} onChange={e => setPhysCtrl(e.target.value)}>
-                {["","Claimant","Insured","Neither"].map(o => <option key={o} value={o}>{o || "-- Select --"}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Was The Insured's Leading Edge Damaged?">
-              <select style={selectStyle} value={insLeading} onChange={e => setInsLeading(e.target.value)}>
-                {["No","Yes"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <FieldRow label="Was The Claimant's Leading Edge Damaged?">
-              <select style={selectStyle} value={clmLeading} onChange={e => setClmLeading(e.target.value)}>
-                {["No","Yes"].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </FieldRow>
-            <ImpactGrid label="Initial Point of Impact on Insured Vehicle" />
-            <ImpactGrid label="Initial Point of Impact on Claimant Vehicle" />
-            <div style={{ marginTop: 4, marginBottom: 6 }}>
-              <button style={greenBtn} onClick={calc}>Calculate Suggested &amp; Update Duties</button>
-            </div>
-          </div>
+          <AssessmentInputPanel
+            rowOwner={rowOwner}       setRowOwner={setRowOwner}
+            foreseeable={foreseeable} setForeseeable={setForeseeable}
+            rowSpeed={rowSpeed}       setRowSpeed={setRowSpeed}
+            speedAssess={speedAssess} setSpeedAssess={setSpeedAssess}
+            lookout1={lookout1}       setLookout1={setLookout1}
+            lookout2={lookout2}       setLookout2={setLookout2}
+            lookout3={lookout3}       setLookout3={setLookout3}
+            avoidance1={avoidance1}   setAvoidance1={setAvoidance1}
+            avoidance2={avoidance2}   setAvoidance2={setAvoidance2}
+            avoidance3={avoidance3}   setAvoidance3={setAvoidance3}
+            legalCtrl={legalCtrl}     setLegalCtrl={setLegalCtrl}
+            physCtrl={physCtrl}       setPhysCtrl={setPhysCtrl}
+            insLeading={insLeading}   setInsLeading={setInsLeading}
+            clmLeading={clmLeading}   setClmLeading={setClmLeading}
+            onCalculate={handleCalculate}
+            suggestedCompleted={suggestedCompleted}
+          />
         </div>
 
-        {/* COL 2 — Duties Breached tables */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-          <DutiesTable title="ROW Duties Breached" rows={ROW_DUTIES} />
-          <DutiesTable title="Speed Duties Breached" rows={[]} />
-          <DutiesTable title="Look Out Duties Breached" rows={LOOKOUT_DUTIES} />
-          <DutiesTable title="Avoidance Duties Breached" rows={AVOIDANCE_DUTIES} />
+        {/* Center column — Duty Breach Cards */}
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-0.5">
+            Breached Duties
+          </div>
+          <DutyBreachPanel
+            rowDuties={rowDuties}             setRowDuties={setRowDuties}
+            speedDuties={speedDuties}         setSpeedDuties={setSpeedDuties}
+            lookoutDuties={lookoutDuties}     setLookoutDuties={setLookoutDuties}
+            avoidanceDuties={avoidanceDuties} setAvoidanceDuties={setAvoidanceDuties}
+          />
         </div>
 
-        {/* COL 3 — Actual Assessment */}
-        <div style={{ width: 500, flexShrink: 0, border: C.border, background: "#fff" }}>
-          <div style={colHeaderStyle()}>Actual Assessment</div>
-
-          <div style={{ padding: "6px 8px", borderBottom: C.borderLight }}>
-            <div style={{ fontSize: 13, color: C.green, fontWeight: "bold", lineHeight: 1.4 }}>{STATE_LAW}</div>
+        {/* Right column — Decision Panel (sticky) */}
+        <div className="flex-shrink-0 sticky top-4" style={{ width: 252 }}>
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-0.5">
+            Decision Panel
           </div>
-
-          <div style={{ padding: "4px 8px", borderBottom: C.borderLight, display: "flex", flexDirection: "column", gap: 2 }}>
-            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
-              To Change the Claim Rep Who Owns the Assessment To You Click Here
-            </a>
-            <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, color: C.green, textDecoration: "underline", lineHeight: 1.3 }}>
-              To Change the Claim Rep To Someone Else, Click Here
-            </a>
-          </div>
-
-          <div style={{ padding: "6px 8px" }}>
-            {[
-              [["Insured Actual Negligence", insActual, setInsActual], ["Insured Low End", insLow, setInsLow]],
-              [["Claimant Negligence Actual", clmActual, setClmActual], ["Insured High End", insHigh, setInsHigh]],
-              [["Claimant Negligence High", clmHigh, setClmHigh], ["Claimant Negligence Low", clmLow, setClmLow]],
-            ].map((row, ri) => (
-              <div key={ri} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                {(row as [string, string, (v: string) => void][]).map(([lbl, val, setter]) => (
-                  <div key={lbl} style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, color: "#555", marginBottom: 1 }}>{lbl}</div>
-                    <input style={{ ...inputStyle, width: "100%" }} value={val} onChange={e => setter(e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ padding: "6px 8px", borderTop: C.borderLight, background: "#f8f8f8", display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={save} style={{ background: C.green, color: "#fff", border: "none", padding: "4px 14px", fontSize: 13, fontWeight: "bold", cursor: "pointer" }}>
-              Save Changes
-            </button>
-            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#333" }}>
-              Deny Claimant?
-              <select value={deny} onChange={e => setDeny(e.target.value)} style={{ fontSize: 13, padding: "2px 3px", border: "1px solid #bbb", fontFamily: "Arial,sans-serif" }}>
-                <option>No</option><option>Yes</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Evidence of Duty Breaches (tabbed, below Avoidance & Actual Assessment) ── */}
-      <div style={{ border: C.border, marginTop: 2 }}>
-
-        {/* Tab bar */}
-        <div style={{ display: "flex", background: "#e8e8e8", borderBottom: C.border }}>
-          <button style={evidTabBtn("evidence")} onClick={() => setEvidTab("evidence")}>
-            Evidence of Duty Breaches
-          </button>
-          <button style={evidTabBtn("summary")} onClick={() => setEvidTab("summary")}>
-            Overall Summary
-          </button>
-        </div>
-
-        {/* Evidence tab */}
-        {evidTab === "evidence" && (
-          <div>
-            {/* ROW */}
-            <div style={{ borderBottom: C.border, background: C.altRow }}>
-              <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight }}>
-                <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Right of Way Duties</span>
-                <span style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginLeft: 8 }}>— What Duty Was Breached to Give ROW?</span>
-              </div>
-              <DutySectionPanel
-                title="Right of Way Key Facts" subtitle="What evidence proves the duty breach?"
-                data={rowDuty} uploadedDocs={uploadedDocs} onUpload={addDoc}
-                {...rowH}
-              />
-            </div>
-
-            {/* Speed */}
-            <div style={{ borderBottom: C.border }}>
-              <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight }}>
-                <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Speed Duties</span>
-                <span style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginLeft: 8 }}>— What Duty Was Breached in Speed?</span>
-              </div>
-              <DutySectionPanel
-                title="Speed Key Facts" subtitle="What evidence proves the duty breach?"
-                locationLabel="Location of Impact"
-                data={spdDuty} uploadedDocs={uploadedDocs} onUpload={addDoc}
-                {...spdH}
-              />
-            </div>
-
-            {/* Lookout */}
-            <div style={{ borderBottom: C.border, background: C.altRow }}>
-              <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight }}>
-                <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Lookout Duties</span>
-                <span style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginLeft: 8 }}>— What Look Out Duties did ROW Driver Breach?</span>
-              </div>
-              <DutySectionPanel
-                title="Lookout Key Facts" subtitle="What evidence proves the duty breach?"
-                locationLabel="Point of Impact"
-                data={lkDuty} uploadedDocs={uploadedDocs} onUpload={addDoc}
-                {...lkH}
-              />
-            </div>
-
-            {/* Avoidance */}
-            <div>
-              <div style={{ padding: "6px 12px", background: "#eaf0f8", borderBottom: C.borderLight }}>
-                <span style={{ fontSize: 13, fontWeight: "bold", color: C.blue }}>Avoidance Duties</span>
-                <span style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginLeft: 8 }}>— What Avoidance Duties did ROW Driver Breach?</span>
-              </div>
-              <DutySectionPanel
-                title="Avoidance Key Facts" subtitle="What evidence proves the duty breach?"
-                data={avDuty} uploadedDocs={uploadedDocs} onUpload={addDoc}
-                {...avH}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Overall Summary tab */}
-        {evidTab === "summary" && (
-          <div style={{ padding: "16px 16px" }}>
-            <div style={{ fontSize: 14, fontWeight: "bold", color: C.navy, marginBottom: 6 }}>Overall Summary of Evidence of Duty Breaches</div>
-            <div style={{ fontSize: 13, color: "#555", marginBottom: 8 }}>
-              Provide a consolidated summary of all duty breaches and supporting evidence across ROW, Speed, Lookout, and Avoidance duties.
-            </div>
-            <textarea
-              rows={10} value={overallSummary}
-              onChange={e => setOverallSummary(e.target.value)}
-              placeholder="Enter overall summary of evidence and duty breaches…"
-              style={{ ...textareaStyle, minHeight: 200 }}
+          {suggestedCompleted ? (
+            <LiveAssessmentPanel
+              insActual={insActual} setInsActual={setInsActual}
+              insLow={insLow}       setInsLow={setInsLow}
+              clmActual={clmActual} setClmActual={setClmActual}
+              insHigh={insHigh}     setInsHigh={setInsHigh}
+              clmHigh={clmHigh}     setClmHigh={setClmHigh}
+              clmLow={clmLow}       setClmLow={setClmLow}
+              deny={deny}           setDeny={setDeny}
+              onSave={() => alert("Saved! (prototype)")}
             />
-          </div>
-        )}
+          ) : (
+            <LockedDecisionPanel onScrollToInputs={scrollToInputs} />
+          )}
+        </div>
       </div>
 
-      {/* Save */}
-      <div style={{ textAlign: "center", padding: "6px 0 10px" }}>
-        <button onClick={save} style={{ background: C.green, color: "#fff", border: "none", padding: "5px 40px", fontSize: 14, fontWeight: "bold", cursor: "pointer" }}>
-          Save
-        </button>
-      </div>
+      {/* Evidence section — full width below workspace */}
+      <EvidenceSection
+        rowDuty={rowDuty} spdDuty={spdDuty} lkDuty={lkDuty} avDuty={avDuty}
+        uploadedDocs={uploadedDocs} onUpload={addDoc}
+        rowH={rowH} spdH={spdH} lkH={lkH} avH={avH}
+        overallSummary={overallSummary} setOverallSummary={setOverallSummary}
+      />
     </div>
   );
 }

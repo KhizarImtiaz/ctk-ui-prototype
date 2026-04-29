@@ -82,7 +82,7 @@ const LEGAL = {
 
 // ─── Styles (inline, enterprise feel) ────────────────────────────────────────
 const S = {
-  page: { display: "flex", flexDirection: "column" as const, gap: 6 },
+  page: { display: "flex", flexDirection: "column" as const, gap: 6, background: "#f0f2f5", minHeight: "100%", padding: 10, fontFamily: "Verdana, Arial, sans-serif" },
   titleBar: {
     display: "flex", alignItems: "center", gap: 6,
     background: "#f0f4f0", border: "1px solid var(--ctk-border)",

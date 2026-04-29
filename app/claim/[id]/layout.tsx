@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const NAV = [
-  { label: "Location, Details and Type",            path: "" },
+  { label: "Location, Details and Type",              path: "" },
   { label: "Investigation Checklist & Legal Summary", path: "/investigation-checklist" },
   { label: "Assessment",                              path: "/liability-assessment" },
-  { label: "Negotiation & Settlement",               path: "/negotiation" },
+  { label: "Negotiation & Settlement",                path: "/negotiation" },
   { label: "Claim Summary",                          path: "/claim-summary" },
   { label: "Just in Time Training",                  path: "/training" },
   { label: "Documents & Correspondence",             path: "/documents" },
@@ -16,6 +17,15 @@ export default function ClaimLayout({ children }: { children: React.ReactNode })
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
   const base = `/claim/${id}`;
+
+  // Hide sidebar by default on the assessment page; show it on all others
+  const isAssessmentPage = pathname?.includes("/liability-assessment") ?? false;
+  const [sidebarOpen, setSidebarOpen] = useState(!isAssessmentPage);
+
+  // Keep sidebar default in sync when navigating between pages
+  useEffect(() => {
+    setSidebarOpen(!pathname?.includes("/liability-assessment"));
+  }, [pathname]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -42,10 +52,30 @@ export default function ClaimLayout({ children }: { children: React.ReactNode })
       </header>
 
       {/* ── Claim sub-header ─────────────────────────────────────── */}
-      <div style={{ background: "var(--ctk-header-bg)", borderBottom: "1px solid var(--ctk-border)", padding: "4px 12px", fontSize: 11, display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        <Link href={base} style={{ color: "var(--ctk-navy)", textDecoration: "none", fontWeight: "bold" }}>←</Link>
-        <span style={{ fontWeight: "bold", fontSize: 13, color: "var(--ctk-navy)" }}>Claim CLM-2026-0847</span>
-        <span style={{ color: "#666" }}>John Doe | John Smith | 2024-03-15</span>
+      <div style={{ background: "var(--ctk-header-bg)", borderBottom: "1px solid var(--ctk-border)", padding: "4px 12px", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Link href={base} style={{ color: "var(--ctk-navy)", textDecoration: "none", fontWeight: "bold" }}>←</Link>
+          <span style={{ fontWeight: "bold", fontSize: 13, color: "var(--ctk-navy)" }}>Claim CLM-2026-0847</span>
+          <span style={{ color: "#666" }}>John Doe | John Smith | 2024-03-15</span>
+        </div>
+
+        {/* Sidebar toggle button */}
+        <button
+          onClick={() => setSidebarOpen(v => !v)}
+          title={sidebarOpen ? "Hide navigation panel" : "Show navigation panel"}
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "3px 10px", fontSize: 11, fontWeight: "bold",
+            background: sidebarOpen ? "var(--ctk-navy)" : "transparent",
+            color: sidebarOpen ? "#fff" : "var(--ctk-navy)",
+            border: "1px solid var(--ctk-navy)",
+            borderRadius: 3, cursor: "pointer",
+            transition: "background 0.15s, color 0.15s",
+          }}
+        >
+          <span style={{ fontSize: 13, lineHeight: 1 }}>{sidebarOpen ? "◀" : "▶"}</span>
+          {sidebarOpen ? "Hide Nav" : "Show Nav"}
+        </button>
       </div>
 
       {/* ── Body: main + right sidebar ───────────────────────────── */}
@@ -55,41 +85,43 @@ export default function ClaimLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
 
-        {/* Right sidebar */}
-        <aside style={{ width: 400, minWidth: 350, background: "var(--ctk-sidebar-bg)", borderLeft: "1px solid var(--ctk-border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-          {/* Scene map thumbnail */}
-          <div style={{ borderBottom: "1px solid var(--ctk-border)", padding: 6, textAlign: "center" }}>
-            <div style={{ width: "100%", height: 110, background: "#b8c8b8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", marginBottom: 4, position: "relative", overflow: "hidden" }}>
-              <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 9, padding: "1px 4px", borderRadius: 2 }}>Scene</span>
-              🗺
+        {/* Right sidebar — conditionally rendered */}
+        {sidebarOpen && (
+          <aside style={{ width: 400, minWidth: 350, background: "var(--ctk-sidebar-bg)", borderLeft: "1px solid var(--ctk-border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+            {/* Scene map thumbnail */}
+            <div style={{ borderBottom: "1px solid var(--ctk-border)", padding: 6, textAlign: "center" }}>
+              <div style={{ width: "100%", height: 110, background: "#b8c8b8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#555", marginBottom: 4, position: "relative", overflow: "hidden" }}>
+                <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 9, padding: "1px 4px", borderRadius: 2 }}>Scene</span>
+                🗺
+              </div>
+              <button style={{ background: "var(--ctk-green)", color: "#fff", border: "none", fontSize: 10, padding: "3px 10px", cursor: "pointer", width: "100%" }}>
+                Edit Scene
+              </button>
             </div>
-            <button style={{ background: "var(--ctk-green)", color: "#fff", border: "none", fontSize: 10, padding: "3px 10px", cursor: "pointer", width: "100%" }}>
-              Edit Scene
-            </button>
-          </div>
 
-          {/* Navigation */}
-          <nav style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
-            {NAV.map(item => {
-              const href = `${base}${item.path}`;
-              const active = pathname === href || (item.path === "" && pathname === base);
-              return (
-                <Link key={item.path} href={href}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "5px 8px", fontSize: 11,
-                    color: active ? "#fff" : "var(--ctk-navy)",
-                    background: active ? "var(--ctk-green)" : "transparent",
-                    borderBottom: "1px solid #ddd", textDecoration: "none", lineHeight: 1.3,
-                  }}
-                >
-                  <span>{item.label}</span>
-                  {active && <span style={{ fontSize: 9, marginLeft: 4 }}>●</span>}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+            {/* Navigation */}
+            <nav style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
+              {NAV.map(item => {
+                const href = `${base}${item.path}`;
+                const active = pathname === href || (item.path === "" && pathname === base);
+                return (
+                  <Link key={item.path} href={href}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "5px 8px", fontSize: 11,
+                      color: active ? "#fff" : "var(--ctk-navy)",
+                      background: active ? "var(--ctk-green)" : "transparent",
+                      borderBottom: "1px solid #ddd", textDecoration: "none", lineHeight: 1.3,
+                    }}
+                  >
+                    <span>{item.label}</span>
+                    {active && <span style={{ fontSize: 9, marginLeft: 4 }}>●</span>}
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
+        )}
       </div>
     </div>
   );
